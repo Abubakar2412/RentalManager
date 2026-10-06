@@ -1,0 +1,52 @@
+@page "/reports"
+@attribute [Authorize]
+@inject RentalService Service
+@inject IJSRuntime JS
+<PageTitle>Reports · Chwaya Rental Manager</PageTitle>
+<header><div><div class="eyebrow">CHWAYA RENTAL MANAGER</div><h1>Monthly reports</h1><p>House and shop reports by rental month and tenant.</p></div></header>
+@if(Error.Length > 0){<p class="error" role="alert">@Error</p>}
+@if(Data is null){<p>@(Error.Length == 0 ? "Loading reports…" : "Reports could not be loaded.")</p>}
+else {
+ <div class="panel reportFilters">
+  <label for="report-month">Month</label><input id="report-month" type="month" @bind="Month" />
+  <label for="report-tenant">Person / tenant</label>
+  <select id="report-tenant" @bind="TenantId"><option value="">All tenants</option>
+   @foreach(var tenant in Data.Tenants.OrderBy(t => t.FullName)){<option value="@tenant.Id">@tenant.FullName (ID @tenant.Id)</option>}
+  </select>
+  <button @onclick="Export" disabled="@(Rows.Count == 0)">Export rent CSV</button>
+ </div>
+ @if(SelectedMonth is null){<p class="error">Select a valid month.</p>}
+ else {
+  var rows = Rows; var receipts = Receipts;
+  <h2>@SelectedMonth.Value.ToString("MMMM yyyy") · @(TenantId is null ? "All tenants" : Data.TenantName(TenantId.Value))</h2>
+  <p>Rent uses the payment's rental period, including advance payments. Each overlapping, non-cancelled lease is charged its full agreed monthly rent; no daily proration is applied.</p>
+  <div class="stats">
+   <div class="stat"><span>Agreed rent</span><b>@Data.Money(rows.Sum(r => r.Rent))</b></div>
+   <div class="stat"><span>Rent paid for month</span><b>@Data.Money(rows.Sum(r => r.Paid))</b></div>
+   <div class="stat"><span>Outstanding balance</span><b>@Data.Money(rows.Sum(r => r.Balance))</b></div>
+   <div class="stat"><span>Overpayment credit</span><b>@Data.Money(rows.Sum(r => r.Credit))</b></div>
+  </div>
+  <h2>Rent by person and property</h2>
+  <div class="panel tableWrap"><table><thead><tr><th>Tenant</th><th>Lease</th><th>Property</th><th>Type</th><th>Rent</th><th>Paid</th><th>Balance</th><th>Credit</th><th>Due date</th></tr></thead><tbody>
+   @foreach(var row in rows){<tr><td>@row.Tenant</td><td>#@row.LeaseId</td><td>@row.Property</td><td>@row.Type</td><td>@Data.Money(row.Rent)</td><td>@Data.Money(row.Paid)</td><td>@Data.Money(row.Balance)</td><td>@Data.Money(row.Credit)</td><td>@row.DueDate.ToString("yyyy-MM-dd")</td></tr>}
+   @if(rows.Count == 0){<tr><td colspan="9" class="empty">No leases for this month and person.</td></tr>}
+  </tbody></table></div>
+  <h2>Payments received in month</h2><p>Total received: @Data.Money(receipts.Sum(p => p.Amount)). Includes rent, deposits and other payments, using the payment date.</p>
+  <div class="panel tableWrap"><table><thead><tr><th>Paid on</th><th>Tenant</th><th>Property</th><th>Rental month</th><th>Kind</th><th>Method</th><th>Reference</th><th>Amount</th></tr></thead><tbody>
+   @foreach(var payment in receipts){var lease = Data.Leases.FirstOrDefault(l => l.Id == payment.LeaseId);
+    <tr><td>@payment.PaidOn.ToString("yyyy-MM-dd")</td><td>@(lease is null ? "Unknown tenant" : Data.TenantName(lease.TenantId))</td><td>@(lease is null ? "Unknown property" : Data.PropertyName(lease.PropertyId))</td><td>@payment.Period.ToString("yyyy-MM")</td><td>@payment.Kind</td><td>@payment.Method</td><td>@payment.Reference</td><td>@Data.Money(payment.Amount)</td></tr>}
+   @if(receipts.Count == 0){<tr><td colspan="8" class="empty">No payments received for this month and person.</td></tr>}
+  </tbody></table></div>
+ }
+}
+@code {
+ RentalData? Data;
+ string Error = "";
+ string Month = DateTime.Today.ToString("yyyy-MM");
+ int? TenantId;
+ DateOnly? SelectedMonth => DateOnly.TryParseExact(Month + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date) && date.Year < 9999 ? date : null;
+ List<MonthlyRentRow> Rows => Data is not null && SelectedMonth is { } month ? RentalReports.Rent(Data, month, TenantId) : [];
+ List<Payment> Receipts => Data is not null && SelectedMonth is { } month ? RentalReports.Receipts(Data, month, TenantId) : [];
+ protected override async Task OnInitializedAsync(){try{Data = await Service.LoadAsync();}catch(Exception e){Error = RentalService.Error(e);}}
+ async Task Export(){try{if(Data is not null && SelectedMonth is { } month)await JS.InvokeVoidAsync("rental.download", $"rent-report-{Month}-{(TenantId?.ToString() ?? "all")}.csv", RentalReports.Csv(Rows, month, Data.Landlord.Currency), "text/csv;charset=utf-8");}catch(Exception e){Error = RentalService.Error(e);}}
+}

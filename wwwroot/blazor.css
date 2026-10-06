@@ -1,1 +1,4 @@
 nav a{display:block;text-decoration:none;color:#b0c8c2;padding:13px 16px;border-radius:7px}nav a.active{background:#255146;color:white}.sidebarFoot a{color:white}.editor{padding:25px;margin:20px 0;background:white;border:1px solid #dbe5df;border-radius:12px}.validation-message,.validation-errors,.error{color:#ac3535}.notice{padding:12px 18px;background:#e5f2e8;border-radius:8px;margin-bottom:16px}.actions{display:flex;gap:8px;margin-top:20px}#blazor-error-ui{display:none;position:fixed;bottom:0;background:#fff0bc;width:100%;padding:15px;z-index:1000}.login a{color:#176b59}.inline{display:flex;gap:12px;align-items:center}.inline select{max-width:200px}.formGrid label input[type=checkbox]{margin-right:10px}.deleteConfirm{padding:15px;background:#fff0eb;border-radius:8px;margin:15px 0}
+
+.reportFilters { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:20px; }
+.reportFilters input, .reportFilters select { width:auto; max-width:100%; }

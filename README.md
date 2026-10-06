@@ -147,3 +147,7 @@ The SQL integration test needs SQL Server LocalDB, or set RENTAL_TEST_CONNECTION
 Publish with dotnet publish -c Release -o publish. Install the .NET 10 Hosting Bundle, use an application pool with No Managed Code, configure HTTPS, AllowedHosts and SQL connection secrets. Enable WebSocket support for SignalR. Preserve Data Protection keys. Back up with SQL Server backup tools.
 
 This is a single-administrator workspace. It does not include online bank payments, tenant self-service, uploads or multiple user roles.
+
+## Monthly reports
+
+Open **Reports** beside **Houses** in the sidebar. Select a month and all tenants or one person. Rent reports cover houses and shops and show rent, payments allocated to that rental month, outstanding balances, overpayment credits and due dates per lease. Payments received use the payment date and include rent, deposits and other payments. Cancelled leases are excluded from agreed rent; ended leases remain visible in their historical months. Partial months use the full agreed monthly rent, matching existing statements. Export the filtered rent table with **Export rent CSV**.
