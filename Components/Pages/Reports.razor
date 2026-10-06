@@ -8,7 +8,7 @@
 @if(Data is null){<p>@(Error.Length == 0 ? "Loading reports…" : "Reports could not be loaded.")</p>}
 else {
  <div class="panel reportFilters">
-  <label for="report-month">Month</label><input id="report-month" type="month" @bind="Month" />
+  <label for="report-month">Month</label><input id="report-month"  @bind="Month" />
   <label for="report-tenant">Person / tenant</label>
   <select id="report-tenant" @bind="TenantId"><option value="">All tenants</option>
    @foreach(var tenant in Data.Tenants.OrderBy(t => t.FullName)){<option value="@tenant.Id">@tenant.FullName (ID @tenant.Id)</option>}
