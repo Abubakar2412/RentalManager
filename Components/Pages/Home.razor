@@ -1,0 +1,31 @@
+@page "/"
+@attribute [Authorize]
+@inject RentalService Service
+<PageTitle>Overview · Chwaya Rental Manager</PageTitle>
+<header><div><div class="eyebrow">CHWAYA RENTAL MANAGER</div><h1>Portfolio overview</h1><p>Houses, shops and rent collections.</p></div></header>
+@if(Error.Length>0){<p class="error">@Error</p>}
+@if(Data is null){<p>Loading portfolio…</p>}else{
+ var active=Data.Leases.Where(Data.IsCurrent).ToList();
+ var month=DateTime.Today;
+ var collected=Data.Payments.Where(p=>p.Kind=="Rent"&&p.PaidOn.Year==month.Year&&p.PaidOn.Month==month.Month).Sum(p=>p.Amount);
+ <div class="stats"><div class="stat"><span>Houses</span><b>@Data.Properties.Count(p=>p.Kind=="House")</b></div><div class="stat"><span>Shops</span><b>@Data.Properties.Count(p=>p.Kind=="Shop")</b></div><div class="stat"><span>Monthly agreed rent</span><b>@Data.Money(active.Sum(l=>l.MonthlyRent))</b></div><div class="stat"><span>Rent received this month</span><b>@Data.Money(collected)</b></div></div>
+ <h2>Current tenancies</h2><div class="panel tableWrap"><table><thead><tr><th>Type</th><th>Property</th><th>Tenant</th><th>Rent</th><th>Ends</th></tr></thead><tbody>@foreach(var l in active){<tr><td>@Data.Properties.First(p=>p.Id==l.PropertyId).Kind</td><td>@Data.PropertyName(l.PropertyId)</td><td>@Data.TenantName(l.TenantId)</td><td>@Data.Money(l.MonthlyRent)</td><td>@l.EndDate.ToString("yyyy-MM-dd")</td></tr>}@if(active.Count==0){<tr><td colspan="5" class="empty">No current leases. Start by adding a house or shop.</td></tr>}</tbody></table></div>
+ <div class="summaryRow"><div class="panel"><h2>Houses</h2><p>@Data.Properties.Count(p=>p.Kind=="House"&&p.Available&&!active.Any(l=>l.PropertyId==p.Id)) available today.</p><a href="/houses">Manage houses</a></div><div class="panel"><h2>Shops</h2><p>@Data.Properties.Count(p=>p.Kind=="Shop"&&p.Available&&!active.Any(l=>l.PropertyId==p.Id)) available today.</p><a href="/shops">Manage shops</a></div></div>
+}
+
+@code {
+    RentalData? Data;string Error="";
+    protected override async Task OnInitializedAsync(){try{Data=await Service.LoadAsync();}catch(Exception e){Error=RentalService.Error(e);}}
+
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     await base.OnAfterRenderAsync(firstRender);
+    //     try { 
+    //         Data = await Service.LoadAsync(); 
+    //     } 
+    //     catch (Exception e) 
+    //     { 
+    //         Error = RentalService.Error(e); 
+    //     }
+    // }
+}

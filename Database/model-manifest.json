@@ -1,0 +1,626 @@
+{
+  "Property": [
+    {
+      "type": "string",
+      "name": "Kind",
+      "length": 10,
+      "sql": "nvarchar(10)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "decimal",
+      "name": "FloorArea",
+      "length": null,
+      "sql": "decimal(18,2)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "BusinessType",
+      "length": 150,
+      "sql": "nvarchar(150)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "byte[]",
+      "name": "RowVersion",
+      "length": null,
+      "sql": "rowversion",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "int",
+      "name": "Id",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": true
+    },
+    {
+      "type": "string",
+      "name": "Name",
+      "length": 120,
+      "sql": "nvarchar(120)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Address",
+      "length": 250,
+      "sql": "nvarchar(250)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "int",
+      "name": "Bedrooms",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "int",
+      "name": "Bathrooms",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "decimal",
+      "name": "MonthlyRent",
+      "length": null,
+      "sql": "decimal(18,2)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Amenities",
+      "length": 3000,
+      "sql": "nvarchar(3000)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "bool",
+      "name": "Available",
+      "length": null,
+      "sql": "bit",
+      "nullable": false,
+      "identity": false
+    }
+  ],
+  "Tenant": [
+    {
+      "type": "byte[]",
+      "name": "RowVersion",
+      "length": null,
+      "sql": "rowversion",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "int",
+      "name": "Id",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": true
+    },
+    {
+      "type": "string",
+      "name": "FullName",
+      "length": 120,
+      "sql": "nvarchar(120)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "NationalId",
+      "length": 80,
+      "sql": "nvarchar(80)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Phone",
+      "length": 40,
+      "sql": "nvarchar(40)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string?",
+      "name": "Email",
+      "length": 150,
+      "sql": "nvarchar(150)",
+      "nullable": true,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Address",
+      "length": 250,
+      "sql": "nvarchar(250)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Occupation",
+      "length": 150,
+      "sql": "nvarchar(150)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "EmergencyName",
+      "length": 120,
+      "sql": "nvarchar(120)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "EmergencyPhone",
+      "length": 40,
+      "sql": "nvarchar(40)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "BankName",
+      "length": 100,
+      "sql": "nvarchar(100)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "AccountName",
+      "length": 120,
+      "sql": "nvarchar(120)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "AccountNumber",
+      "length": 80,
+      "sql": "nvarchar(80)",
+      "nullable": false,
+      "identity": false
+    }
+  ],
+  "Lease": [
+    {
+      "type": "byte[]",
+      "name": "RowVersion",
+      "length": null,
+      "sql": "rowversion",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "int",
+      "name": "Id",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": true
+    },
+    {
+      "type": "int",
+      "name": "PropertyId",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "int",
+      "name": "TenantId",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "DateOnly",
+      "name": "StartDate",
+      "length": null,
+      "sql": "date",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "DateOnly",
+      "name": "EndDate",
+      "length": null,
+      "sql": "date",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "decimal",
+      "name": "MonthlyRent",
+      "length": null,
+      "sql": "decimal(18,2)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "decimal",
+      "name": "Deposit",
+      "length": null,
+      "sql": "decimal(18,2)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "int",
+      "name": "DueDay",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "int",
+      "name": "Occupants",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "int",
+      "name": "NoticeDays",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Status",
+      "length": null,
+      "sql": "nvarchar(max)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "SpecialTerms",
+      "length": 10000,
+      "sql": "nvarchar(10000)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "WitnessName",
+      "length": 120,
+      "sql": "nvarchar(120)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "WitnessPhone",
+      "length": 40,
+      "sql": "nvarchar(40)",
+      "nullable": false,
+      "identity": false
+    }
+  ],
+  "Payment": [
+    {
+      "type": "byte[]",
+      "name": "RowVersion",
+      "length": null,
+      "sql": "rowversion",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "int",
+      "name": "Id",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": true
+    },
+    {
+      "type": "int",
+      "name": "LeaseId",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "DateOnly",
+      "name": "PaidOn",
+      "length": null,
+      "sql": "date",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "DateOnly",
+      "name": "Period",
+      "length": null,
+      "sql": "date",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "decimal",
+      "name": "Amount",
+      "length": null,
+      "sql": "decimal(18,2)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Kind",
+      "length": null,
+      "sql": "nvarchar(max)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Method",
+      "length": null,
+      "sql": "nvarchar(max)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Reference",
+      "length": 120,
+      "sql": "nvarchar(120)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Notes",
+      "length": 1000,
+      "sql": "nvarchar(1000)",
+      "nullable": false,
+      "identity": false
+    }
+  ],
+  "Landlord": [
+    {
+      "type": "byte[]",
+      "name": "RowVersion",
+      "length": null,
+      "sql": "rowversion",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "int",
+      "name": "Id",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Name",
+      "length": 150,
+      "sql": "nvarchar(150)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Address",
+      "length": 250,
+      "sql": "nvarchar(250)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Phone",
+      "length": 40,
+      "sql": "nvarchar(40)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string?",
+      "name": "Email",
+      "length": 150,
+      "sql": "nvarchar(150)",
+      "nullable": true,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "NationalId",
+      "length": 80,
+      "sql": "nvarchar(80)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "BankName",
+      "length": 100,
+      "sql": "nvarchar(100)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "AccountName",
+      "length": 120,
+      "sql": "nvarchar(120)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "AccountNumber",
+      "length": 80,
+      "sql": "nvarchar(80)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Currency",
+      "length": 10,
+      "sql": "nvarchar(10)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "ContractTerms",
+      "length": 10000,
+      "sql": "nvarchar(10000)",
+      "nullable": false,
+      "identity": false
+    }
+  ],
+  "Admin": [
+    {
+      "type": "string",
+      "name": "SecurityStamp",
+      "length": 32,
+      "sql": "nvarchar(32)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "int",
+      "name": "Id",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Username",
+      "length": 80,
+      "sql": "nvarchar(80)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "PasswordHash",
+      "length": 1000,
+      "sql": "nvarchar(1000)",
+      "nullable": false,
+      "identity": false
+    }
+  ],
+  "ContractSnapshot": [
+    {
+      "type": "int",
+      "name": "Id",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": true
+    },
+    {
+      "type": "int",
+      "name": "LeaseId",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "DateTimeOffset",
+      "name": "CreatedAt",
+      "length": null,
+      "sql": "datetimeoffset",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Html",
+      "length": null,
+      "sql": "nvarchar(max)",
+      "nullable": false,
+      "identity": false
+    }
+  ],
+  "AuditEntry": [
+    {
+      "type": "int",
+      "name": "Id",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": true
+    },
+    {
+      "type": "DateTimeOffset",
+      "name": "At",
+      "length": null,
+      "sql": "datetimeoffset",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Actor",
+      "length": 80,
+      "sql": "nvarchar(80)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Action",
+      "length": 30,
+      "sql": "nvarchar(30)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "string",
+      "name": "Entity",
+      "length": 40,
+      "sql": "nvarchar(40)",
+      "nullable": false,
+      "identity": false
+    },
+    {
+      "type": "int",
+      "name": "EntityId",
+      "length": null,
+      "sql": "int",
+      "nullable": false,
+      "identity": false
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.10.12224.181 stable
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RentalManager", "RentalManager.csproj", "{D7DF09EB-3B74-4BF0-8427-FEE82C3E6194}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RentalManager.Tests", "Tests\RentalManager.Tests.csproj", "{B019C885-3E33-4D42-966C-E1D90C64E4E3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D7DF09EB-3B74-4BF0-8427-FEE82C3E6194}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7DF09EB-3B74-4BF0-8427-FEE82C3E6194}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7DF09EB-3B74-4BF0-8427-FEE82C3E6194}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7DF09EB-3B74-4BF0-8427-FEE82C3E6194}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B019C885-3E33-4D42-966C-E1D90C64E4E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B019C885-3E33-4D42-966C-E1D90C64E4E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B019C885-3E33-4D42-966C-E1D90C64E4E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B019C885-3E33-4D42-966C-E1D90C64E4E3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1AA4CD56-EE73-4237-9C00-0DCFFA71940D}
+	EndGlobalSection
+EndGlobal

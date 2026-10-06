@@ -1,0 +1,86 @@
+@page "/houses"
+@* @page "/shops"
+@page "/tenants"
+@page "/leases"
+@page "/payments" *@
+@attribute [Authorize]
+@inject NavigationManager Navigation
+@inject RentalService Service
+@inject IJSRuntime JS
+@inject ILogger<Records> Logger
+<PageTitle>@Title · Chwaya Rental Manager</PageTitle>
+<header><div><div class="eyebrow">PROPERTY MANAGEMENT</div><h1>@Title</h1><p>@Description</p></div></header>
+@if(!string.IsNullOrEmpty(Message)){<div class="notice" role="status">@Message</div>}
+@if(Data is null){<p>Loading records…</p>}else{
+ <div class="toolbar"><input @bind="Search" @bind:event="oninput" placeholder="Search records…" aria-label="Search" /><div><button @onclick="Refresh" disabled="@Busy">Refresh</button><button @onclick="Export">Export CSV</button><button class="primary" @onclick="Add">+ Add @Singular</button></div></div>
+ @if(Editor is not null){<RecordEditor @key="Editor" Record="Editor" Data="Data" OnSaved="Saved" OnCancel="Cancel" />}
+ @if(ToDelete is not null){<div class="deleteConfirm">Delete this @Singular? Linked records are protected. <button class="danger" disabled="@Busy" @onclick="Delete">Confirm delete</button><button @onclick="()=>ToDelete=null">Cancel</button></div>}
+ <div class="panel tableWrap"><table><thead><tr>@foreach(var column in Columns){<th>@Label(column)</th>}<th>Actions</th></tr></thead><tbody>
+ @foreach(var record in Filtered){<tr>@foreach(var column in Columns){<td>@Value(record,column)</td>}<td><button @onclick="()=>Edit(record)">Edit</button><button class="danger" @onclick="()=>ToDelete=record">Delete</button>@if(record is Lease l){<button disabled="@Busy" @onclick="()=>Generate(l.Id)">Generate contract</button><button @onclick="()=>Statement(l)">Statement</button>}</td></tr>}
+ @if(!Filtered.Any()){<tr><td colspan="@(Columns.Length+1)" class="empty">No records found. Add your first @Singular.</td></tr>}
+ </tbody></table></div>
+ @if(Section=="payments"){<p class="hint">Houses and shops use the same payment method, rent-period allocation and deposit rules.</p>}
+}
+@code {
+    RentalData? Data;IEntity? Editor;IEntity? ToDelete;string Section="houses",Search="",Message="";bool Busy;
+    string Title=>CultureInfo.CurrentCulture.TextInfo.ToTitleCase(Section);
+    string Singular=>Section switch{"houses"=>"house","shops"=>"shop","tenants"=>"tenant","leases"=>"lease",_=>"payment"};
+    string Description=>Section switch{"houses"=>"Bedroom counts, availability and residential rent.","shops"=>"Commercial units, floor area and shop rent.","tenants"=>"National ID, contact, bank and account details.","leases"=>"House and shop agreements in one workflow.",_=>"Receipts for houses and shops."};
+    protected override async Task OnParametersSetAsync()
+    {
+        Section=Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0].Trim('/');Editor=null;ToDelete=null;Search="";Message="";
+        await Refresh();
+    }
+
+    async Task Refresh()
+    {
+        try{
+            Data=await Service.LoadAsync();
+        }
+        catch(Exception e)
+        {
+            Message=RentalService.Error(e);
+            Logger.LogError(e,"Loading rental records failed");
+        }
+        
+    }
+
+    IEnumerable<IEntity> Items=>Data is null?[]:Section 
+    switch{
+        "houses"=>Data.Properties.Where(p=>p.Kind=="House").Cast<IEntity>(),
+        "shops"=>Data.Properties.Where(p=>p.Kind=="Shop").Cast<IEntity>(),
+        "tenants"=>Data.Tenants.Cast<IEntity>(),
+        "leases"=>Data.Leases.Cast<IEntity>(),
+        _=>Data.Payments.Cast<IEntity>()
+    };
+
+    IEnumerable<IEntity> Filtered=>Items.Where(x=>string.IsNullOrWhiteSpace(Search)||string.Join(" ",x.GetType().GetProperties().Where(p=>p.Name!="RowVersion").Select(p=>p.GetValue(x))).Contains(Search,StringComparison.OrdinalIgnoreCase)|| (x is Lease l&&$"{Data!.PropertyName(l.PropertyId)} {Data.TenantName(l.TenantId)}".Contains(Search,StringComparison.OrdinalIgnoreCase)));
+    string[] Columns=>Section 
+    switch{
+        "houses"=>["Name","Address","Bedrooms","Bathrooms","MonthlyRent","Available"],
+        "shops"=>["Name","Address","FloorArea","BusinessType","MonthlyRent","Available"],
+        "tenants"=>["FullName","NationalId","Phone","Email","BankName","AccountName","AccountNumber"],
+        "leases"=>["Id","PropertyId","TenantId","StartDate","EndDate","MonthlyRent","Deposit","Status"],
+        _=>["Reference","LeaseId","PaidOn","Period","Amount","Kind","Method"]
+    };
+
+    static string Label(string s)=>s switch{"PropertyId"=>"House / shop","TenantId"=>"Tenant","LeaseId"=>"Lease",_=>System.Text.RegularExpressions.Regex.Replace(s,"([a-z])([A-Z])","$1 $2")};
+    async Task<string> Value(IEntity record,string key){
+        if(record is Property prop&&key=="Available")return Data!.Leases.Any(l=>l.PropertyId==prop.Id&&Data.IsCurrent(l))?"Occupied":prop.Available?"Available":"Unavailable";
+        if(key=="PropertyId")return Data!.PropertyName((int)record.GetType().GetProperty(key)!.GetValue(record)!);
+        if(key=="TenantId")return Data!.TenantName((int)record.GetType().GetProperty(key)!.GetValue(record)!);
+        var v=record.GetType().GetProperty(key)?.GetValue(record);
+        return v switch{decimal d when key=="MonthlyRent"||key=="Deposit"||key=="Amount"=>Data!.Money(d),DateOnly d=>d.ToString("yyyy-MM-dd"),bool b=>b?"Available":"Unavailable",null=>"",_=>v.ToString()??""};
+        
+    }
+
+    void Add(){Message="";Editor=Section switch{"houses"=>new Property{
+    Kind="House"},"shops"=>new Property{Kind="Shop",Bedrooms=0},"tenants"=>new Tenant(),"leases"=>new Lease(),_=>new Payment()};}
+ void Edit(IEntity item){Message="";Editor=(IEntity)System.Text.Json.JsonSerializer.Deserialize(System.Text.Json.JsonSerializer.Serialize(item,item.GetType()),item.GetType())!;}
+ void Cancel(){Editor=null;}
+ async Task Saved(){Editor=null;await Refresh();Message="Record saved.";}
+ async Task Delete(){if(ToDelete is null||Busy)return;Busy=true;try{await Service.DeleteAsync(ToDelete);ToDelete=null;await Refresh();Message="Record deleted.";}catch(Exception e){Message=RentalService.Error(e);Logger.LogError(e,"Delete failed");}finally{Busy=false;}}
+ async Task Generate(int id){if(Busy)return;Busy=true;try{var contract=await Service.GenerateContractAsync(id);await Refresh();Message=$"Contract #{contract} saved. Open Contracts to print or save as PDF.";}catch(Exception e){Message=RentalService.Error(e);Logger.LogError(e,"Contract generation failed");}finally{Busy=false;}}
+ async Task Export()=>await JS.InvokeVoidAsync("rental.download",$"{Section}-{DateTime.Today:yyyy-MM-dd}.csv",CsvExport.Records(Filtered),"text/csv;charset=utf-8");
+ async Task Statement(Lease l){await JS.InvokeVoidAsync("rental.download",$"lease-{l.Id}-statement.csv",CsvExport.Statement(l,Data!),"text/csv;charset=utf-8");Message="Statement downloaded. Each intersecting calendar month is charged a full month's rent; no proration. Deposits and other payments are excluded.";}
+}

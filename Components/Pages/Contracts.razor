@@ -1,0 +1,11 @@
+@page "/contracts"
+@attribute [Authorize]
+@inject RentalService Service
+<PageTitle>Contracts · Chwaya Rental Manager</PageTitle>
+<header><div><h1>Generated contracts</h1><p>Saved house and shop agreement snapshots.</p></div></header>
+@if(Error.Length>0){<p class="error">@Error</p>}
+@if(Data is not null){<div class="panel tableWrap"><table><thead><tr><th>Contract</th><th>Lease</th><th>Generated UTC</th><th>Document</th></tr></thead><tbody>@foreach(var c in Data.Contracts){<tr><td>#@c.Id</td><td>RM-@c.LeaseId.ToString("D6")</td><td>@c.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</td><td><a href="@($"/documents/contracts/{c.Id}")" target="_blank" rel="noopener" data-enhance-nav="false">Open / Print / Save PDF</a></td></tr>}@if(Data.Contracts.Count==0){<tr><td colspan="4" class="empty">Generate your first agreement from Leases.</td></tr>}</tbody></table></div>}
+@code{
+ RentalData? Data;string Error="";
+ protected override async Task OnInitializedAsync(){try{Data=await Service.LoadAsync();}catch(Exception e){Error=RentalService.Error(e);}}
+}

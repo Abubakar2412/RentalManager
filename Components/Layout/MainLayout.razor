@@ -1,0 +1,14 @@
+@inherits LayoutComponentBase
+<div class="sidebar">
+ <div class="brand">N<span>NYUMBA<small>Houses &amp; shops</small></span></div>
+ <nav>
+  <NavLink href="/" Match="NavLinkMatch.All">Overview</NavLink>
+  <NavLink href="houses">Houses</NavLink><NavLink href="shops">Shops</NavLink>
+  <NavLink href="tenants">Tenants</NavLink><NavLink href="leases">Leases</NavLink>
+  <NavLink href="payments">Payments</NavLink><NavLink href="contracts">Contracts</NavLink>
+  <NavLink href="settings">Landlord &amp; settings</NavLink><NavLink href="audit">Activity log</NavLink>
+ </nav>
+ <div class="sidebarFoot">Blazor Server · SQL Server<br /><a href="/Account/Logout" data-enhance-nav="false">Sign out</a></div>
+</div>
+<main>@Body<footer>Chwaya Rental Manager · Houses and shops</footer></main>
+<div id="blazor-error-ui">Connection interrupted or an error occurred. <a href="" class="reload">Reload</a></div>
