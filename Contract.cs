@@ -3,7 +3,7 @@ namespace RentalManager;
 public static class Contract {
  public static string Render(Lease l,Property h,Tenant t,Landlord s){
  string E(object? v)=>WebUtility.HtmlEncode(v?.ToString()??"");
- var currency=System.Text.RegularExpressions.Regex.IsMatch(s.Currency??"",@"\A[A-Za-z]{3,10}\z")?s.Currency.ToUpperInvariant():"TZS";
+ var currency=System.Text.RegularExpressions.Regex.IsMatch(s.Currency??"",@"\A[A-Za-z]{3,10}\z")?(s.Currency ?? "TZS").ToUpperInvariant():"TZS";
  string Money(decimal v)=>$"{currency} {v:N2}";
  string Row(string key,object? v)=>$"<tr><th>{E(key)}</th><td>{E(v)}</td></tr>";
  return $"""

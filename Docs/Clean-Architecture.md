@@ -21,7 +21,7 @@ The persistence implementation retains transaction-sensitive lease validation, o
 5. Audit pages skip loading properties, tenants, leases and payments. Core screens skip contract/audit queries. Database reads retain `AsNoTracking`.
 6. Single-month rent saves now enforce lease-month bounds and two-decimal payment precision, matching instalment validation.
 7. Translate persistence errors at the Infrastructure boundary, keeping EF dependencies out of Application.
-8. Source checker now matches the real project and migration layout; GitHub Actions builds and runs tests that do not require SQL Server.
+8. Source checker now matches the real project and migration layout; GitHub Actions builds and runs unit tests plus an isolated SQL Server workflow test.
 
 These changes reduce repeated work; no measured latency or throughput improvement is claimed. Core screens still load all core records. Very large portfolios need database-side pagination and filtered report queries as a future change, rather than a silent truncation that would corrupt totals.
 
@@ -38,4 +38,4 @@ Run the SQL integration test separately against a test-only SQL Server using `RE
 
 ## Execution limits
 
-The editing environment has no .NET SDK or SQL Server. Source/XML, JavaScript syntax and whitespace checks can run here; compilation, package restore, migrations, rendering and SQL integration tests cannot. CI is provided to perform the .NET checks. Do not treat this refactor as evidence that every runtime issue has been found or fixed. The existing EF package version is retained rather than changing it during an uncompiled architecture refactor.
+GitHub Actions has successfully restored, compiled and passed the 11 non-SQL tests. The SQL workflow check identified a missing database overlap trigger; an additive migration now installs it for new and existing databases. The editing environment has no .NET SDK or SQL Server. Source/XML, JavaScript syntax and whitespace checks can run here; compilation, package restore, migrations, rendering and SQL integration tests cannot. CI is provided to perform the .NET checks. Do not treat this refactor as evidence that every runtime issue has been found or fixed. The existing EF package version is retained rather than changing it during the architecture refactor.

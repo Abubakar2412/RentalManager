@@ -8,7 +8,7 @@ public class RentalData {
  public Landlord Landlord {get;set;}=new();
  public List<ContractInfo> Contracts {get;set;}=[];
  public List<AuditEntry> Audit {get;set;}=[];
- public string CurrencyCode => System.Text.RegularExpressions.Regex.IsMatch(Landlord.Currency ?? "", @"\A[A-Za-z]{3,10}\z") ? Landlord.Currency.ToUpperInvariant() : "TZS";
+ public string CurrencyCode => System.Text.RegularExpressions.Regex.IsMatch(Landlord.Currency ?? "", @"\A[A-Za-z]{3,10}\z") ? (Landlord.Currency ?? "TZS").ToUpperInvariant() : "TZS";
  public string Money(decimal amount)=>$"{CurrencyCode} {amount:N2}";
  public string PropertyName(int id)=>Properties.FirstOrDefault(x=>x.Id==id)?.Name??"Unknown property";
  public string TenantName(int id)=>Tenants.FirstOrDefault(x=>x.Id==id)?.FullName??"Unknown tenant";
