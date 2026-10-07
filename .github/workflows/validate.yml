@@ -12,3 +12,30 @@ jobs:
       - run: dotnet restore RentalManager.sln
       - run: dotnet build RentalManager.sln --no-restore --configuration Release
       - run: dotnet test Tests/RentalManager.Tests.csproj --no-build --configuration Release --filter 'FullyQualifiedName!~HousesAndShopsUseTheSamePaymentsAndContracts'
+  sql-workflow:
+    runs-on: ubuntu-latest
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_SA_PASSWORD: 'RentalTest_2026!Only'
+        ports:
+          - 1433:1433
+    env:
+      RENTAL_TEST_CONNECTION: 'Server=localhost,1433;User ID=sa;Password=RentalTest_2026!Only;TrustServerCertificate=true;'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Wait for test SQL Server
+        env:
+          SQL_CONTAINER: ${{ job.services.sqlserver.id }}
+        run: |
+          for attempt in $(seq 1 30); do
+            if docker exec "$SQL_CONTAINER" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'RentalTest_2026!Only' -C -Q 'SELECT 1' >/dev/null 2>&1; then exit 0; fi
+            sleep 2
+          done
+          echo 'SQL Server did not become ready'; exit 1
+      - run: dotnet test Tests/RentalManager.Tests.csproj --configuration Release --filter 'FullyQualifiedName~HousesAndShopsUseTheSamePaymentsAndContracts'
