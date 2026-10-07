@@ -43,9 +43,10 @@ else {
   <section id="annual-rent-report">
    <h2>Annual rent report · @SelectedMonth.Value.Year</h2><PdfReport Target="annual-rent-report" Title="Annual rent report" />
    <p>@(TenantId is null ? "All tenants" : Data.TenantName(TenantId.Value)). January–December; future months are projected agreed rent, not overdue debt.</p>
-   <div class="panel tableWrap"><table><thead><tr><th>Month</th><th>Agreed rent</th><th>Rent paid</th><th>Balance</th><th>Credit</th><th>Payments received</th></tr></thead><tbody>
-    @foreach(var annual in AnnualRows){<tr><td>@annual.Month.ToString("MMMM")</td><td>@Data.Money(annual.Rent)</td><td>@Data.Money(annual.Paid)</td><td>@Data.Money(annual.Balance)</td><td>@Data.Money(annual.Credit)</td><td>@Data.Money(annual.Received)</td></tr>}
-   </tbody><tfoot><tr><th>Annual total</th><td>@Data.Money(AnnualRows.Sum(r=>r.Rent))</td><td>@Data.Money(AnnualRows.Sum(r=>r.Paid))</td><td>@Data.Money(AnnualRows.Sum(r=>r.Balance))</td><td>@Data.Money(AnnualRows.Sum(r=>r.Credit))</td><td>@Data.Money(AnnualRows.Sum(r=>r.Received))</td></tr></tfoot></table></div>
+   <div class="panel tableWrap"><table><thead><tr><th>Year</th><th>Period</th><th>Person</th><th>Total agreed rent</th><th>Total rent paid</th><th>Total balance</th><th>Total credit</th><th>Total received</th></tr></thead>
+   <tbody><tr><td>@SelectedMonth.Value.Year</td><td>January–December · 12 months</td><td>@(TenantId is null ? "All tenants" : Data.TenantName(TenantId.Value))</td>
+   <td>@Data.Money(AnnualRows.Sum(r=>r.Rent))</td><td>@Data.Money(AnnualRows.Sum(r=>r.Paid))</td><td>@Data.Money(AnnualRows.Sum(r=>r.Balance))</td><td>@Data.Money(AnnualRows.Sum(r=>r.Credit))</td><td>@Data.Money(AnnualRows.Sum(r=>r.Received))</td></tr></tbody></table></div>
+   <p>One combined yearly total. Rent paid follows the allocated rental months; total received follows payment dates. Balance includes projected future rent and is not an overdue-only amount.</p>
   </section>
  }
 }
