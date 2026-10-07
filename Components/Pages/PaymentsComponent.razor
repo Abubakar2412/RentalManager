@@ -37,7 +37,7 @@ else
                 @foreach (var record in Filtered)
                 {
                     <tr>@foreach(var column in Columns){
-                        <td>@Value(record, column)</td>
+                    <td>@((Value(record, column)).Result)</td>
                     }
                     <td><button @onclick="() => Edit(record)">Edit</button><button class="danger" @onclick="() => ToDelete = record">Delete</button>@if(record is Lease l){
                         <button disabled="@Busy" @onclick="() => Generate(l.Id)">Generate contract</button><button @onclick="() => Statement(l)">Statement</button>
