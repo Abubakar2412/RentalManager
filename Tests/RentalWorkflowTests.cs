@@ -28,9 +28,9 @@ public class RentalWorkflowTests {
    var tenant=new Tenant{FullName="Test <script>alert(1)</script>",NationalId="TEST-001",Phone="000000",Address="Test area",AccountNumber="000123"};
    await service.SaveAsync(tenant);
    foreach(var kind in new[]{"House","Shop"}) {
-    var property=new Property{Kind=kind,Name="Test "+kind,Address="Test area",Bedrooms=kind=="House"?2:0,MonthlyRent=650000,BusinessType=kind=="Shop"?"Retail":""};
+    var property=new Property{Kind=kind,Name="Test "+kind,BuildingNumber="TEST-01",Address="Test area",Bedrooms=kind=="House"?2:0,MonthlyRent=650000,BusinessType=kind=="Shop"?"Retail":""};
     await service.SaveAsync(property);
-    var lease=new Lease{PropertyId=property.Id,TenantId=tenant.Id,StartDate=new(2026,1,1),EndDate=new(2026,12,31),MonthlyRent=650000,Deposit=650000};
+    var lease=new Lease{PropertyId=property.Id,TenantId=tenant.Id,StartDate=new(2026,1,1),EndDate=new(2026,12,31),MonthlyRent=650000,Deposit=650000,LandlordWitnessName="Landlord witness",LandlordWitnessPhone="000001",WitnessName="Tenant witness",WitnessPhone="000002"};
     await service.SaveAsync(lease);
     await Assert.ThrowsAsync<InvalidOperationException>(()=>service.SaveAsync(new Lease{PropertyId=property.Id,TenantId=tenant.Id,StartDate=lease.StartDate,EndDate=lease.EndDate,MonthlyRent=650000}));
     await using(var direct=factory.CreateDbContext()) {
