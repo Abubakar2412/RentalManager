@@ -34,11 +34,11 @@ else {
    @foreach(var row in rows){<tr><td>@row.Tenant</td><td>#@row.LeaseId</td><td>@row.Property</td><td>@row.Type</td><td>@Data.Money(row.Rent)</td><td>@Data.Money(row.Paid)</td><td>@Data.Money(row.Balance)</td><td>@Data.Money(row.Credit)</td><td>@row.DueDate.ToString("yyyy-MM-dd")</td></tr>}
    @if(rows.Count == 0){<tr><td colspan="9" class="empty">No leases for this month and person.</td></tr>}
   </tbody></table></div>
-  </section><section id="monthly-receipts-report"><h2>Payments received in month</h2><PdfReport Target="monthly-receipts-report" Title="Monthly payments report" /><p>@Month · @(TenantId is null ? "All tenants" : Data.TenantName(TenantId.Value))</p><p>Total received: @Data.Money(receipts.Sum(p => p.Amount)). Includes rent, deposits and other payments, using the payment date.</p>
-  <div class="panel tableWrap"><table><thead><tr><th>Paid on</th><th>Tenant</th><th>Property</th><th>Rental month</th><th>Kind</th><th>Method</th><th>Reference</th><th>Amount</th></tr></thead><tbody>
-   @foreach(var payment in receipts){var lease = Data.Leases.FirstOrDefault(l => l.Id == payment.LeaseId);
-    <tr><td>@payment.PaidOn.ToString("yyyy-MM-dd")</td><td>@(lease is null ? "Unknown tenant" : Data.TenantName(lease.TenantId))</td><td>@(lease is null ? "Unknown property" : Data.PropertyName(lease.PropertyId))</td><td>@payment.Period.ToString("yyyy-MM")</td><td>@payment.Kind</td><td>@payment.Method</td><td>@payment.Reference</td><td>@Data.Money(payment.Amount)</td></tr>}
-   @if(receipts.Count == 0){<tr><td colspan="8" class="empty">No payments received for this month and person.</td></tr>}
+  </section><section id="monthly-receipts-report"><h2>Payments received in month</h2><PdfReport Target="monthly-receipts-report" Title="Monthly payments report" /><p>@Month · @(TenantId is null ? "All tenants" : Data.TenantName(TenantId.Value))</p><p>Total received: @Data.Money(receipts.Sum(p => p.Total)). Includes rent, deposits and other payments, using the payment date. Each complete multi-month payment is shown once with its total and covered period.</p>
+  <div class="panel tableWrap"><table><thead><tr><th>Paid on</th><th>Tenant</th><th>Property</th><th>Rental period</th><th>Months</th><th>Kind</th><th>Method</th><th>Reference</th><th>Amount</th></tr></thead><tbody>
+   @foreach(var receipt in receipts){var payment=receipt.First;var lease = Data.Leases.FirstOrDefault(l => l.Id == payment.LeaseId);
+    <tr><td>@payment.PaidOn.ToString("yyyy-MM-dd")</td><td>@(lease is null ? "Unknown tenant" : Data.TenantName(lease.TenantId))</td><td>@(lease is null ? "Unknown property" : Data.PropertyName(lease.PropertyId))</td><td>@receipt.Start.ToString("MMM yyyy")@(receipt.Payments.Count>1 ? " – "+receipt.End.ToString("MMM yyyy") : "")</td><td>@receipt.Payments.Count</td><td>@payment.Kind</td><td>@payment.Method</td><td>@receipt.Reference</td><td>@Data.Money(receipt.Total)</td></tr>}
+   @if(receipts.Count == 0){<tr><td colspan="9" class="empty">No payments received for this month and person.</td></tr>}
   </tbody></table></div></section>
   <section id="annual-rent-report">
    <h2>Annual rent report · @SelectedMonth.Value.Year</h2><PdfReport Target="annual-rent-report" Title="Annual rent report" />
@@ -61,7 +61,7 @@ else {
  int? TenantId;
  DateOnly? SelectedMonth => DateOnly.TryParseExact(Month + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date) && date.Year < 9999 ? date : null;
  List<MonthlyRentRow> Rows => Data is not null && SelectedMonth is { } month ? RentalReports.Rent(Data, month, TenantId) : [];
- List<Payment> Receipts => Data is not null && SelectedMonth is { } month ? RentalReports.Receipts(Data, month, TenantId) : [];
+ List<PaymentReceipt> Receipts => Data is not null && SelectedMonth is { } month ? PaymentReceipts.Group(RentalReports.Receipts(Data, month, TenantId)) : [];
  protected override async Task OnInitializedAsync(){try{Data = await Service.LoadAsync();}catch(Exception e){Error = RentalService.Error(e);}}
  async Task Export(){try{if(Data is not null && SelectedMonth is { } month)await JS.InvokeVoidAsync("rental.download", $"rent-report-{Month}-{(TenantId?.ToString() ?? "all")}.csv", RentalReports.Csv(Rows, month, Data.Landlord.Currency), "text/csv;charset=utf-8");}catch(Exception e){Error = RentalService.Error(e);}}
 }
