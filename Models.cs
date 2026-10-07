@@ -70,7 +70,7 @@ public class Landlord : IEntity {
  [Required,StringLength(100)] public string BankName {get;set;}="";
  [Required,StringLength(120)] public string AccountName {get;set;}="";
  [Required,StringLength(80)] public string AccountNumber {get;set;}="";
- [Required,StringLength(10)] public string Currency {get;set;}="TZS";
+ [Required,StringLength(10),RegularExpression(@"[A-Za-z]{3,10}",ErrorMessage="Enter a currency code such as TZS, USD or EUR, not an amount.")] public string Currency {get;set;}="TZS";
  [StringLength(10000)] public string ContractTerms {get;set;}="The premises may be used only for the purpose stated in this agreement. The tenant must keep the premises clean, report damage promptly, and obtain written consent before subletting or making alterations. The landlord is responsible for agreed structural repairs. Utilities are paid by the tenant unless agreed otherwise. The deposit is refunded after inspection, less documented agreed deductions. Any termination and dispute resolution must comply with applicable law.";
 }
 public class Admin {
