@@ -7,6 +7,10 @@
   @if(Record is Property){<p class="hint">Advertised rent is the suggested price. Reports use the agreed rent on the lease; these amounts are not added together.</p>}
   @if(Record is Lease){<p class="hint">This is the single monthly charge for this lease. Deposit is separate and is not monthly rent.</p>}
   @if(Record is Payment){<p class="hint">Enter only the money received in this payment. A payment reduces the rent balance; it does not add another rent charge.</p>}
+  @if(Record is Payment rent && rent.Id==0 && rent.Kind=="Rent") {
+   <label>Months covered by this payment <select value="@MonthsCovered" disabled="@Busy" @onchange="ChangeMonths">@foreach(var n in Enumerable.Range(1,12)){<option value="@n">@n month(s)</option>}</select></label>
+   <p class="hint">Amount paid is the TOTAL for all selected months. Saving allocates it once across those months; it does not repeat the total each month.</p>
+  }
   <div class="formGrid">
    @foreach(var field in Fields) {
     var options=Options(field.Name);
@@ -38,9 +42,12 @@
  [Parameter,EditorRequired] public RentalData Data {get;set;}=default!;
  [Parameter] public EventCallback OnSaved {get;set;}
  [Parameter] public EventCallback OnCancel {get;set;}
- bool Busy;string Error="";
+ bool Busy;string Error="";int MonthsCovered=1;
+ void ChangeMonths(ChangeEventArgs args){if(int.TryParse(args.Value?.ToString(),out var n)&&n>=1&&n<=12){MonthsCovered=n;SetInstalmentAmount();}}
+ void SetInstalmentAmount(){if(Record is Payment p && p.Id==0 && p.Kind=="Rent"){var lease=Data.Leases.FirstOrDefault(l=>l.Id==p.LeaseId);if(lease!=null)p.Amount=lease.MonthlyRent*MonthsCovered;}}
+
  IEnumerable<System.Reflection.PropertyInfo> Fields=>Record.GetType().GetProperties().Where(p=>p.Name!="Id"&&p.Name!="RowVersion"&& !(Record is Property prop&&((prop.Kind=="House"&&p.Name=="BusinessType")||(prop.Kind=="Shop"&&p.Name=="Bedrooms"))));
- string Label(string s)=>s switch{"MonthlyRent" when Record is Property=>"Advertised monthly rent","MonthlyRent" when Record is Lease=>"Agreed monthly rent","Amount" when Record is Payment=>"Amount paid (this payment)","PropertyId"=>"House / shop","TenantId"=>"Tenant","LeaseId"=>"Lease","Period"=>"Rental period (month)","FloorArea"=>"Floor area (m²)","BusinessType"=>"Permitted business activity",_=>System.Text.RegularExpressions.Regex.Replace(s,"([a-z])([A-Z])","$1 $2")};
+ string Label(string s)=>s switch{"WitnessName"=>"Tenant witness name","WitnessPhone"=>"Tenant witness phone","PaymentIntervalMonths"=>"Pay rent every (months)","RenewalIntervalMonths"=>"Renew every (months)","MonthlyRent" when Record is Property=>"Advertised monthly rent","MonthlyRent" when Record is Lease=>"Agreed monthly rent","Amount" when Record is Payment=>"Amount paid (this payment)","PropertyId"=>"House / shop","TenantId"=>"Tenant","LeaseId"=>"Lease","Period"=>"Rental period (month)","FloorArea"=>"Floor area (m²)","BusinessType"=>"Permitted business activity",_=>System.Text.RegularExpressions.Regex.Replace(s,"([a-z])([A-Z])","$1 $2")};
  string Format(System.Reflection.PropertyInfo p)=>p.GetValue(Record) switch{DateOnly d=>d.ToString("yyyy-MM-dd"),decimal n=>n.ToString(CultureInfo.InvariantCulture),null=>"",var v=>v.ToString()??""};
  static bool IsLong(System.Reflection.PropertyInfo p)=>new[]{"Amenities","SpecialTerms","ContractTerms","Notes"}.Contains(p.Name);
  static int MaxLength(System.Reflection.PropertyInfo p)=>p.GetCustomAttributes(typeof(StringLengthAttribute),true).Cast<StringLengthAttribute>().FirstOrDefault()?.MaximumLength??250;
@@ -64,10 +71,10 @@
    var text=args.Value?.ToString()??"";
    object? value=field.PropertyType==typeof(bool)?args.Value is true:field.PropertyType==typeof(int)?int.Parse(text,CultureInfo.InvariantCulture):field.PropertyType==typeof(decimal)?decimal.Parse(text,CultureInfo.InvariantCulture):field.PropertyType==typeof(DateOnly)?DateOnly.ParseExact(text,"yyyy-MM-dd",CultureInfo.InvariantCulture):field.Name=="Email"&&string.IsNullOrWhiteSpace(text)?null:text.Trim();
    field.SetValue(Record,value);Error="";
-   if(Record is Lease l&&field.Name=="PropertyId"){var prop=Data.Properties.FirstOrDefault(p=>p.Id==l.PropertyId);if(prop!=null&&l.Id==0)l.MonthlyRent=prop.MonthlyRent;}
-   if(Record is Payment payment && payment.Id==0 && (field.Name=="LeaseId" || field.Name=="Kind") && payment.Kind=="Rent" && payment.Amount==0){var lease=Data.Leases.FirstOrDefault(x=>x.Id==payment.LeaseId);if(lease!=null)payment.Amount=lease.MonthlyRent;}
+   if(Record is Lease l&&field.Name=="PropertyId"){var prop=Data.Properties.FirstOrDefault(p=>p.Id==l.PropertyId);if(prop!=null&&l.Id==0){l.MonthlyRent=prop.MonthlyRent;l.PaymentIntervalMonths=prop.Kind=="Shop"?6:1;}}
+   if(Record is Payment payment && payment.Id==0 && (field.Name=="LeaseId" || field.Name=="Kind") && payment.Kind=="Rent"){var lease=Data.Leases.FirstOrDefault(x=>x.Id==payment.LeaseId);if(lease!=null){MonthsCovered=lease.PaymentIntervalMonths;SetInstalmentAmount();}}
    if(Record is Property shop&&shop.Kind=="Shop")shop.Bedrooms=0;
   }catch(FormatException){Error=$"Enter a valid value for {Label(field.Name)}.";}
  }
- async Task Save(EditContext context){if(Busy||Error.StartsWith("Enter a valid value"))return;Busy=true;Error="";try{await Service.SaveAsync(Record);await OnSaved.InvokeAsync();}catch(Exception e){Logger.LogError(e,"Rental record save failed");Error=RentalService.Error(e);}finally{Busy=false;}}
+ async Task Save(EditContext context){if(Busy||Error.StartsWith("Enter a valid value"))return;Busy=true;Error="";try{if(Record is Payment payment && payment.Id==0 && payment.Kind=="Rent" && MonthsCovered>1)await Service.SaveRentInstalmentAsync(payment,MonthsCovered);else await Service.SaveAsync(Record);await OnSaved.InvokeAsync();}catch(Exception e){Logger.LogError(e,"Rental record save failed");Error=RentalService.Error(e);}finally{Busy=false;}}
 }

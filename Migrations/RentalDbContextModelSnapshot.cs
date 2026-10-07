@@ -182,6 +182,12 @@ namespace RentalManager.Migrations
 
             modelBuilder.Entity("RentalManager.Lease", b =>
                 {
+                    b.Property<int>("PaymentIntervalMonths").HasColumnType("int");
+                    b.Property<int>("RenewalIntervalMonths").HasColumnType("int");
+                    b.Property<string>("LandlordWitnessName").IsRequired().HasMaxLength(120).HasColumnType("nvarchar(120)");
+                    b.Property<string>("LandlordWitnessPhone").IsRequired().HasMaxLength(40).HasColumnType("nvarchar(40)");
+                    b.Property<string>("LandlordWitnessTitle").IsRequired().HasMaxLength(120).HasColumnType("nvarchar(120)");
+                    b.Property<string>("TenantWitnessTitle").IsRequired().HasMaxLength(120).HasColumnType("nvarchar(120)");
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
@@ -321,6 +327,7 @@ namespace RentalManager.Migrations
 
             modelBuilder.Entity("RentalManager.Property", b =>
                 {
+                    b.Property<string>("BuildingNumber").IsRequired().HasMaxLength(120).HasColumnType("nvarchar(120)");
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");

@@ -4,6 +4,7 @@ public interface IEntity { int Id {get;set;} }
 public class Property : IEntity {
  [Required,RegularExpression("House|Shop"),StringLength(10)] public string Kind {get;set;}="House";
  [Range(0,100000)] public decimal FloorArea {get;set;}
+ [StringLength(120)] public string BuildingNumber {get;set;}="";
  [StringLength(150)] public string BusinessType {get;set;}="";
  [Timestamp] public byte[] RowVersion {get;set;}=[];
  public int Id {get;set;}
@@ -39,6 +40,12 @@ public class Lease : IEntity {
  public DateOnly EndDate {get;set;}=DateOnly.FromDateTime(DateTime.Today.AddYears(1));
  [Range(1,1000000000)] public decimal MonthlyRent {get;set;}
  [Range(0,1000000000)] public decimal Deposit {get;set;}
+ [Range(1,12)] public int PaymentIntervalMonths {get;set;}=1;
+ [Range(1,12)] public int RenewalIntervalMonths {get;set;}=6;
+ [StringLength(120)] public string LandlordWitnessName {get;set;}="";
+ [StringLength(40)] public string LandlordWitnessPhone {get;set;}="";
+ [StringLength(120)] public string LandlordWitnessTitle {get;set;}="";
+ [StringLength(120)] public string TenantWitnessTitle {get;set;}="";
  [Range(1,28)] public int DueDay {get;set;}=1;
  [Range(1,100)] public int Occupants {get;set;}=1;
  [Range(0,365)] public int NoticeDays {get;set;}=30;

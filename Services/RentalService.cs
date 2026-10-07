@@ -54,6 +54,20 @@ public class RentalService(IDbContextFactory<RentalDbContext> factory,Authentica
   if(added)db.Add(entity);else db.Update(entity);
   await db.SaveChangesAsync();AddAudit(db,actor,added?"Create":"Update",entity.GetType().Name,entity.Id);await db.SaveChangesAsync();await tx.CommitAsync();
  }
+ public async Task SaveRentInstalmentAsync(Payment payment,int months) {
+  if(payment.Id!=0||payment.Kind!="Rent"||months<1||months>12)throw new InvalidOperationException("Select 1–12 months for a new rent payment.");
+  var actor=await Actor();Validate(payment);
+  if(payment.PaidOn==default||payment.Period==default)throw new InvalidOperationException("Payment date and rental month are required.");
+  await using var db=await factory.CreateDbContextAsync();
+  await using var tx=await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+  var lease=await db.Leases.SingleOrDefaultAsync(x=>x.Id==payment.LeaseId)??throw new InvalidOperationException("Select an existing lease.");
+  var parts=RentAllocation.Split(payment,months);
+  var first=new DateOnly(lease.StartDate.Year,lease.StartDate.Month,1);var last=new DateOnly(lease.EndDate.Year,lease.EndDate.Month,1);
+  if(lease.Status=="Cancelled"||parts.Any(x=>x.Period<first||x.Period>last))throw new InvalidOperationException("All rental months must fall within a non-cancelled lease.");
+  foreach(var part in parts){Validate(part);db.Payments.Add(part);}
+  await db.SaveChangesAsync();foreach(var part in parts)AddAudit(db,actor,"Create","Payment",part.Id);
+  await db.SaveChangesAsync();await tx.CommitAsync();
+ }
  public async Task DeleteAsync(IEntity entity){var actor=await Actor();if(entity is Landlord)throw new InvalidOperationException("Landlord settings cannot be deleted.");await using var db=await factory.CreateDbContextAsync();await using var tx=await db.Database.BeginTransactionAsync();db.Remove(entity);AddAudit(db,actor,"Delete",entity.GetType().Name,entity.Id);await db.SaveChangesAsync();await tx.CommitAsync();}
  public async Task<int> GenerateContractAsync(int leaseId){
   var actor=await Actor();await using var db=await factory.CreateDbContextAsync();await using var tx=await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
@@ -61,6 +75,7 @@ public class RentalService(IDbContextFactory<RentalDbContext> factory,Authentica
   var p=await db.Properties.AsNoTracking().SingleAsync(x=>x.Id==l.PropertyId);
   var t=await db.Tenants.AsNoTracking().SingleAsync(x=>x.Id==l.TenantId);
   var landlord=await db.Landlords.AsNoTracking().SingleOrDefaultAsync()??throw new InvalidOperationException("Complete Landlord & settings first.");Validate(landlord);
+  if(p.Kind=="Shop"&&(string.IsNullOrWhiteSpace(p.BuildingNumber)||string.IsNullOrWhiteSpace(l.LandlordWitnessName)||string.IsNullOrWhiteSpace(l.WitnessName)||string.IsNullOrWhiteSpace(l.LandlordWitnessPhone)||string.IsNullOrWhiteSpace(l.WitnessPhone)))throw new InvalidOperationException("Complete the building number and both witnesses' names and phone numbers before generating a shop contract.");
   var doc=new ContractSnapshot{LeaseId=leaseId,CreatedAt=DateTimeOffset.UtcNow,Html=Contract.Render(l,p,t,landlord)};
   db.Contracts.Add(doc);await db.SaveChangesAsync();AddAudit(db,actor,"Generate","Contract",doc.Id);await db.SaveChangesAsync();await tx.CommitAsync();return doc.Id;
  }

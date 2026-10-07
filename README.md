@@ -157,3 +157,7 @@ Open **Reports** beside **Houses** in the sidebar. Select a month and all tenant
 Reports now includes a January–December summary for the selected year's month, filtered by tenant. Monthly agreed rent is taken from leases; annual totals add each covered month rather than multiplying every lease by 12. Future months are projections. Use **Add monthly rent payment** to record a payment, select its lease and rental month, and save; the report refreshes after saving. Houses and shops share this workflow.
 
 Each application section has a **PDF report** button. Reports provides separate buttons for monthly rent, monthly receipts and annual totals. These open a clean report view with repeating table headers; choose **Save as PDF** in the browser print dialog. Allow pop-ups for the application. PDFs reflect the current filters and exclude editor controls and action buttons.
+
+## Shop No. 6 contract baseline
+
+The supplied Kiswahili agreement is translated in [Docs/ShopContract-English.md](Docs/ShopContract-English.md), with implementation requirements and setup in [Docs/Contract-Requirements.md](Docs/Contract-Requirements.md). Shop leases support six-month payment and renewal intervals, building identification and separate witnesses. New rent payments can allocate a total across 1–12 rental months in a single transaction. Existing saved contract snapshots and existing monthly payment intervals are retained.
