@@ -1,0 +1,9 @@
+@inject IJSRuntime JS
+<button type="button" class="pdfReport" @onclick="Export">PDF report</button>
+@if(Error.Length > 0){<p class="error" role="alert">@Error</p>}
+@code {
+ [Parameter] public string? Target {get;set;}
+ [Parameter] public string Title {get;set;}="Rental Manager report";
+ string Error="";
+ async Task Export(){try{Error="";await JS.InvokeVoidAsync("rental.reportPdf",Target,Title);}catch{Error="Unable to open the report. Allow pop-ups and try again.";}}
+}

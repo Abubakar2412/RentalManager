@@ -10,6 +10,7 @@
 @inject ILogger<Records> Logger
 <PageTitle>@Title · Chwaya Rental Manager</PageTitle>
 <header><div><div class="eyebrow">PROPERTY MANAGEMENT</div><h1>@Title</h1><p>@Description</p></div></header>
+<PdfReport Title="Records report" />
 @if(!string.IsNullOrEmpty(Message)){<div class="notice" role="status">@Message</div>}
 @if(Data is null){<p>Loading records…</p>}else{
  <div class="toolbar"><input @bind="Search" @bind:event="oninput" placeholder="Search records…" aria-label="Search" /><div><button @onclick="Refresh" disabled="@Busy">Refresh</button><button @onclick="Export">Export CSV</button><button class="primary" @onclick="Add">+ Add @Singular</button></div></div>

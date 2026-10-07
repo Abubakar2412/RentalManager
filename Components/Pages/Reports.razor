@@ -3,7 +3,7 @@
 @inject RentalService Service
 @inject IJSRuntime JS
 <PageTitle>Reports · Chwaya Rental Manager</PageTitle>
-<header><div><div class="eyebrow">CHWAYA RENTAL MANAGER</div><h1>Monthly reports</h1><p>House and shop reports by rental month and tenant.</p></div></header>
+<header><div><div class="eyebrow">CHWAYA RENTAL MANAGER</div><h1>Monthly and annual reports</h1><p>House and shop reports by rental month and tenant.</p></div></header>
 @if(Error.Length > 0){<p class="error" role="alert">@Error</p>}
 @if(Data is null){<p>@(Error.Length == 0 ? "Loading reports…" : "Reports could not be loaded.")</p>}
 else {
@@ -13,8 +13,10 @@ else {
   <select id="report-tenant" @bind="TenantId"><option value="">All tenants</option>
    @foreach(var tenant in Data.Tenants.OrderBy(t => t.FullName)){<option value="@tenant.Id">@tenant.FullName (ID @tenant.Id)</option>}
   </select>
+  <button @onclick="AddRent" disabled="@(SelectedMonth is null)">+ Add monthly rent payment</button>
   <button @onclick="Export" disabled="@(Rows.Count == 0)">Export rent CSV</button>
  </div>
+ @if(NewPayment is not null){<RecordEditor Record="NewPayment" Data="Data" OnSaved="PaymentSaved" OnCancel="CancelPayment" />}
  @if(SelectedMonth is null){<p class="error">Select a valid month.</p>}
  else {
   var rows = Rows; var receipts = Receipts;
@@ -26,20 +28,33 @@ else {
    <div class="stat"><span>Outstanding balance</span><b>@Data.Money(rows.Sum(r => r.Balance))</b></div>
    <div class="stat"><span>Overpayment credit</span><b>@Data.Money(rows.Sum(r => r.Credit))</b></div>
   </div>
-  <h2>Rent by person and property</h2>
+  <section id="monthly-rent-report"><h2>Rent by person and property</h2><PdfReport Target="monthly-rent-report" Title="Monthly rent report" />
+  <p>@Month · @(TenantId is null ? "All tenants" : Data.TenantName(TenantId.Value))</p>
   <div class="panel tableWrap"><table><thead><tr><th>Tenant</th><th>Lease</th><th>Property</th><th>Type</th><th>Rent</th><th>Paid</th><th>Balance</th><th>Credit</th><th>Due date</th></tr></thead><tbody>
    @foreach(var row in rows){<tr><td>@row.Tenant</td><td>#@row.LeaseId</td><td>@row.Property</td><td>@row.Type</td><td>@Data.Money(row.Rent)</td><td>@Data.Money(row.Paid)</td><td>@Data.Money(row.Balance)</td><td>@Data.Money(row.Credit)</td><td>@row.DueDate.ToString("yyyy-MM-dd")</td></tr>}
    @if(rows.Count == 0){<tr><td colspan="9" class="empty">No leases for this month and person.</td></tr>}
   </tbody></table></div>
-  <h2>Payments received in month</h2><p>Total received: @Data.Money(receipts.Sum(p => p.Amount)). Includes rent, deposits and other payments, using the payment date.</p>
+  </section><section id="monthly-receipts-report"><h2>Payments received in month</h2><PdfReport Target="monthly-receipts-report" Title="Monthly payments report" /><p>@Month · @(TenantId is null ? "All tenants" : Data.TenantName(TenantId.Value))</p><p>Total received: @Data.Money(receipts.Sum(p => p.Amount)). Includes rent, deposits and other payments, using the payment date.</p>
   <div class="panel tableWrap"><table><thead><tr><th>Paid on</th><th>Tenant</th><th>Property</th><th>Rental month</th><th>Kind</th><th>Method</th><th>Reference</th><th>Amount</th></tr></thead><tbody>
    @foreach(var payment in receipts){var lease = Data.Leases.FirstOrDefault(l => l.Id == payment.LeaseId);
     <tr><td>@payment.PaidOn.ToString("yyyy-MM-dd")</td><td>@(lease is null ? "Unknown tenant" : Data.TenantName(lease.TenantId))</td><td>@(lease is null ? "Unknown property" : Data.PropertyName(lease.PropertyId))</td><td>@payment.Period.ToString("yyyy-MM")</td><td>@payment.Kind</td><td>@payment.Method</td><td>@payment.Reference</td><td>@Data.Money(payment.Amount)</td></tr>}
    @if(receipts.Count == 0){<tr><td colspan="8" class="empty">No payments received for this month and person.</td></tr>}
-  </tbody></table></div>
+  </tbody></table></div></section>
+  <section id="annual-rent-report">
+   <h2>Annual rent report · @SelectedMonth.Value.Year</h2><PdfReport Target="annual-rent-report" Title="Annual rent report" />
+   <p>@(TenantId is null ? "All tenants" : Data.TenantName(TenantId.Value)). January–December; future months are projected agreed rent, not overdue debt.</p>
+   <div class="panel tableWrap"><table><thead><tr><th>Month</th><th>Agreed rent</th><th>Rent paid</th><th>Balance</th><th>Credit</th><th>Payments received</th></tr></thead><tbody>
+    @foreach(var annual in AnnualRows){<tr><td>@annual.Month.ToString("MMMM")</td><td>@Data.Money(annual.Rent)</td><td>@Data.Money(annual.Paid)</td><td>@Data.Money(annual.Balance)</td><td>@Data.Money(annual.Credit)</td><td>@Data.Money(annual.Received)</td></tr>}
+   </tbody><tfoot><tr><th>Annual total</th><td>@Data.Money(AnnualRows.Sum(r=>r.Rent))</td><td>@Data.Money(AnnualRows.Sum(r=>r.Paid))</td><td>@Data.Money(AnnualRows.Sum(r=>r.Balance))</td><td>@Data.Money(AnnualRows.Sum(r=>r.Credit))</td><td>@Data.Money(AnnualRows.Sum(r=>r.Received))</td></tr></tfoot></table></div>
+  </section>
  }
 }
 @code {
+ Payment? NewPayment;
+ void AddRent(){if(SelectedMonth is {} month)NewPayment = new Payment{Kind="Rent", Period=month};}
+ void CancelPayment()=>NewPayment=null;
+ async Task PaymentSaved(){NewPayment=null;try{Data=await Service.LoadAsync();Error="";}catch(Exception e){Error=RentalService.Error(e);}}
+ List<AnnualRentRow> AnnualRows => Data is not null && SelectedMonth is {} month ? RentalReports.Annual(Data,month.Year,TenantId) : [];
  RentalData? Data;
  string Error = "";
  string Month = DateTime.Today.ToString("yyyy-MM");
