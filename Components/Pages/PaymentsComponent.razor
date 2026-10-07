@@ -19,7 +19,7 @@
 }
 else
 {
-    <div class="toolbar"><input @bind="Search" @bind:event="oninput" placeholder="Search records…" aria-label="Search" /><div><button @onclick="Refresh" disabled="@Busy">Refresh</button><button @onclick="Export">Export CSV</button><button class="primary" @onclick="Add">+ Add @Singular</button></div></div>
+    <div class="toolbar"><input @bind="Search" @bind:event="oninput" placeholder="Search records…" aria-label="Search" /><div><button @onclick="Refresh" disabled="@Busy">Refresh</button><button @onclick="Export">Export monthly allocations CSV</button><button class="primary" @onclick="Add">+ Add @Singular</button></div></div>
     @if (Editor is not null)
     {
         <RecordEditor @key="Editor" Record="Editor" Data="Data" OnSaved="Saved" OnCancel="Cancel" />
@@ -28,36 +28,34 @@ else
     {
         <div class="deleteConfirm">Delete this @Singular? Linked records are protected. <button class="danger" disabled="@Busy" @onclick="Delete">Confirm delete</button><button @onclick="() => ToDelete = null">Cancel</button></div>
     }
-    <div class="panel tableWrap">
-        <table>
-            <thead><tr>@foreach(var column in Columns){
-                <th>@Label(column)</th>
-            }
-            <th>Actions</th></tr></thead>
-            <tbody>
-                @foreach (var record in Filtered)
-                {
-                    <tr>@foreach(var column in Columns){
-                    <td>@((Value(record, column)).Result)</td>
-                    }
-                    <td><button @onclick="() => Edit(record)">Edit</button><button class="danger" @onclick="() => ToDelete = record">Delete</button>@if(record is Lease l){
-                        <button disabled="@Busy" @onclick="() => Generate(l.Id)">Generate contract</button><button @onclick="() => Statement(l)">Statement</button>
-                    }
-                </td></tr>
-            }
-            @if (!Filtered.Any())
-            {
-                <tr><td colspan="@(Columns.Length + 1)" class="empty">No records found. Add your first @Singular.</td></tr>
-            }
-        </tbody>
-    </table>
-</div>
+    <div class="panel tableWrap"><table>
+    <thead><tr><th>Reference</th><th>Tenant / property</th><th>Paid on</th><th>Months covered</th><th>Total paid</th><th>Kind</th><th>Method</th><th>Actions</th></tr></thead>
+    <tbody>
+    @foreach(var receipt in Receipts) {
+      var payment=receipt.First;var lease=Data.Leases.FirstOrDefault(l=>l.Id==payment.LeaseId);
+      <tr><td>@receipt.Reference</td><td>@(lease is null ? $"Lease #{payment.LeaseId}" : $"{Data.TenantName(lease.TenantId)} · {Data.PropertyName(lease.PropertyId)}")</td>
+      <td>@payment.PaidOn.ToString("yyyy-MM-dd")</td><td>@receipt.Start.ToString("MMM yyyy")@(receipt.Payments.Count>1 ? " – "+receipt.End.ToString("MMM yyyy") : "") · @receipt.Payments.Count month(s)</td>
+      <td>@Data.Money(receipt.Total)</td><td>@payment.Kind</td><td>@payment.Method</td>
+      <td>@if(receipt.Payments.Count==1){<button @onclick="()=>Edit(payment)">Edit</button><button class="danger" @onclick="()=>ToDelete=payment">Delete</button>}
+      else {<button @onclick="()=>Toggle(receipt.First.Id)">@(Expanded.Contains(receipt.First.Id) ? "Hide months" : "View / edit months")</button>}</td></tr>
+      @if(receipt.Payments.Count>1 && Expanded.Contains(receipt.First.Id)) {
+       <tr><td colspan="8"><table><thead><tr><th>Rental month</th><th>Allocated amount</th><th>Actions</th></tr></thead><tbody>
+       @foreach(var part in receipt.Payments){<tr><td>@part.Period.ToString("MMMM yyyy")</td><td>@Data.Money(part.Amount)</td><td><button @onclick="()=>Edit(part)">Edit allocation</button><button class="danger" @onclick="()=>ToDelete=part">Delete allocation</button></td></tr>}
+       </tbody></table></td></tr>
+      }
+    }
+    @if(!Receipts.Any()){<tr><td colspan="8" class="empty">No payments found.</td></tr>}
+    </tbody></table></div>
+
 @if (Section == "payments")
 {
-    <p class="hint">Houses and shops use the same payment method, rent-period allocation and deposit rules.</p>
+    <p class="hint">Multi-month payments appear once with their combined total. Expand a payment to edit its monthly allocations. Monthly reports still use the individual allocations.</p>
 }
 }
 @code {
+    HashSet<int> Expanded=[];
+    void Toggle(int id){if(!Expanded.Add(id))Expanded.Remove(id);}
+    IEnumerable<PaymentReceipt> Receipts => Data is null ? [] : PaymentReceipts.Group(Data.Payments).Where(r=>string.IsNullOrWhiteSpace(Search) || (r.Reference+" "+r.First.LeaseId+" "+r.First.PaidOn+" "+r.First.Method+" "+r.First.Kind+" "+r.Start+" "+r.End+" "+r.Total).Contains(Search,StringComparison.OrdinalIgnoreCase) || Data.Leases.Any(l=>l.Id==r.First.LeaseId && (Data.TenantName(l.TenantId)+" "+Data.PropertyName(l.PropertyId)).Contains(Search,StringComparison.OrdinalIgnoreCase)) || r.Payments.Any(p=>p.Reference.Contains(Search,StringComparison.OrdinalIgnoreCase)));
     RentalData? Data; IEntity? Editor; IEntity? ToDelete; string Section = "houses", Search = "", Message = ""; bool Busy;
     string Title => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(Section);
     string Singular => Section switch { "houses" => "house", "shops" => "shop", "tenants" => "tenant", "leases" => "lease", _ => "payment" };
