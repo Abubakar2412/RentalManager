@@ -11,5 +11,5 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12"><PrivateAssets>all</PrivateAssets><IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets></PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.12"><PrivateAssets>all</PrivateAssets></PackageReference>
   </ItemGroup>
-  <ItemGroup><Compile Remove="Tests/**/*.cs" /><Content Remove="Tests/**" /><None Remove="Tests/**" /></ItemGroup>
-</Project>
+  <ItemGroup><Compile Remove="Tests/**/*.cs;src/**/*.cs" /><Content Remove="Tests/**" /><None Remove="Tests/**" /></ItemGroup>
+<ItemGroup><ProjectReference Include="src/RentalManager.Application/RentalManager.Application.csproj" /><ProjectReference Include="src/RentalManager.Infrastructure/RentalManager.Infrastructure.csproj" /></ItemGroup></Project>

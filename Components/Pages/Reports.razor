@@ -19,7 +19,7 @@ else {
  @if(NewPayment is not null){<RecordEditor Record="NewPayment" Data="Data" OnSaved="PaymentSaved" OnCancel="CancelPayment" />}
  @if(SelectedMonth is null){<p class="error">Select a valid month.</p>}
  else {
-  var rows = Rows; var receipts = Receipts;
+  var rows = Rows; var receipts = Receipts; var annualRows = AnnualRows;
   <h2>@SelectedMonth.Value.ToString("MMMM yyyy") · @(TenantId is null ? "All tenants" : Data.TenantName(TenantId.Value))</h2>
   <p>Rent uses the payment's rental period, including advance payments. Each overlapping, non-cancelled lease is charged its full agreed monthly rent; no daily proration is applied.</p>
   <div class="stats">
@@ -45,7 +45,7 @@ else {
    <p>@(TenantId is null ? "All tenants" : Data.TenantName(TenantId.Value)). January–December; future months are projected agreed rent, not overdue debt.</p>
    <div class="panel tableWrap"><table><thead><tr><th>Year</th><th>Period</th><th>Person</th><th>Total agreed rent</th><th>Total rent paid</th><th>Total balance</th><th>Total credit</th><th>Total received</th></tr></thead>
    <tbody><tr><td>@SelectedMonth.Value.Year</td><td>January–December · 12 months</td><td>@(TenantId is null ? "All tenants" : Data.TenantName(TenantId.Value))</td>
-   <td>@Data.Money(AnnualRows.Sum(r=>r.Rent))</td><td>@Data.Money(AnnualRows.Sum(r=>r.Paid))</td><td>@Data.Money(AnnualRows.Sum(r=>r.Balance))</td><td>@Data.Money(AnnualRows.Sum(r=>r.Credit))</td><td>@Data.Money(AnnualRows.Sum(r=>r.Received))</td></tr></tbody></table></div>
+   <td>@Data.Money(annualRows.Sum(r=>r.Rent))</td><td>@Data.Money(annualRows.Sum(r=>r.Paid))</td><td>@Data.Money(annualRows.Sum(r=>r.Balance))</td><td>@Data.Money(annualRows.Sum(r=>r.Credit))</td><td>@Data.Money(annualRows.Sum(r=>r.Received))</td></tr></tbody></table></div>
    <p>One combined yearly total. Rent paid follows the allocated rental months; total received follows payment dates. Balance includes projected future rent and is not an overdue-only amount.</p>
   </section>
  }
@@ -54,7 +54,7 @@ else {
  Payment? NewPayment;
  void AddRent(){if(SelectedMonth is {} month)NewPayment = new Payment{Kind="Rent", Period=month};}
  void CancelPayment()=>NewPayment=null;
- async Task PaymentSaved(){NewPayment=null;try{Data=await Service.LoadAsync();Error="";}catch(Exception e){Error=RentalService.Error(e);}}
+ async Task PaymentSaved(){NewPayment=null;try{Data=await Service.LoadAsync(RentalLoadScope.Core);Error="";}catch(Exception e){Error=RentalService.Error(e);}}
  List<AnnualRentRow> AnnualRows => Data is not null && SelectedMonth is {} month ? RentalReports.Annual(Data,month.Year,TenantId) : [];
  RentalData? Data;
  string Error = "";
@@ -63,6 +63,6 @@ else {
  DateOnly? SelectedMonth => DateOnly.TryParseExact(Month + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date) && date.Year < 9999 ? date : null;
  List<MonthlyRentRow> Rows => Data is not null && SelectedMonth is { } month ? RentalReports.Rent(Data, month, TenantId) : [];
  List<PaymentReceipt> Receipts => Data is not null && SelectedMonth is { } month ? PaymentReceipts.Group(RentalReports.Receipts(Data, month, TenantId)) : [];
- protected override async Task OnInitializedAsync(){try{Data = await Service.LoadAsync();}catch(Exception e){Error = RentalService.Error(e);}}
- async Task Export(){try{if(Data is not null && SelectedMonth is { } month)await JS.InvokeVoidAsync("rental.download", $"rent-report-{Month}-{(TenantId?.ToString() ?? "all")}.csv", RentalReports.Csv(Rows, month, Data.Landlord.Currency), "text/csv;charset=utf-8");}catch(Exception e){Error = RentalService.Error(e);}}
+ protected override async Task OnInitializedAsync(){try{Data = await Service.LoadAsync(RentalLoadScope.Core);}catch(Exception e){Error = RentalService.Error(e);}}
+ async Task Export(){try{if(Data is not null && SelectedMonth is { } month)await JS.InvokeVoidAsync("rental.download", $"rent-report-{Month}-{(TenantId?.ToString() ?? "all")}.csv", RentalReports.Csv(Rows, month, Data.CurrencyCode), "text/csv;charset=utf-8");}catch(Exception e){Error = RentalService.Error(e);}}
 }

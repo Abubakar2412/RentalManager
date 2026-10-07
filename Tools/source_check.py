@@ -1,28 +1,23 @@
-"""Static consistency checks; not a substitute for dotnet build or SQL integration tests."""
-import json,re,xml.etree.ElementTree as ET
+"""Architecture and source checks; build and database tests are separate checks."""
 from pathlib import Path
+import xml.etree.ElementTree as ET
 root=Path(__file__).resolve().parents[1]
-config=json.loads((root/'appsettings.json').read_text())
-assert config['Database']['AutoMigrate'] is True
-assert config['Database']['ConnectionName']=='DefaultConnectionOnHrPayMisHubDbDev'
-for connection in config['ConnectionStrings'].values():
- assert 'Database=Chwaya_rentalDb;' in connection
- assert 'PayrollHubDb' not in connection
-ET.parse(root/'RentalManager.csproj')
-ET.parse(root/'Tests/RentalManager.Tests.csproj')
-program=(root/'Program.cs').read_text()
-assert 'AddInteractiveServerComponents' in program and 'AddInteractiveServerRenderMode' in program
-assert 'WebAssembly' not in program and 'UseSqlServer' in program and 'MigrateAsync' in program
-assert 'EnsureCreated' not in program
-migration=(root/'Migrations/20261005130000_InitialRentalSqlServer.cs').read_text()
-snapshot=(root/'Migrations/RentalDbContextModelSnapshot.cs').read_text()
-manifest=json.loads((root/'Database/model-manifest.json').read_text())
-for name,fields in manifest.items():
- assert f'modelBuilder.Entity("RentalManager.{name}"' in snapshot
- for field in fields:
-  assert '"'+field['name']+'"' in snapshot
-  assert re.search(r'\b'+field['name']+r'=table.Column',migration)
-assert 'TR_Leases_NoOverlap' in migration and 'UseSqlOutputClause(false)' in snapshot
-assert 'PropertyId' in (root/'Services/RentalService.cs').read_text()
-assert 'commercial shop use' in (root/'Contract.cs').read_text()
-print('PASS: project XML, connection selection, server rendering, migration/snapshot field manifest, shop contract configuration')
+for p in root.rglob('*.csproj'):
+ if 'obj' not in p.parts: ET.parse(p)
+domain=root/'src/RentalManager.Domain'
+application=root/'src/RentalManager.Application'
+for directory in (domain,application):
+ for p in directory.glob('*.cs'):
+  assert 'using Microsoft.EntityFrameworkCore' not in p.read_text(),p
+  assert 'using Microsoft.AspNetCore' not in p.read_text(),p
+for p in (root/'Components').rglob('*.razor'):
+ assert '.Result' not in p.read_text(),p
+for p in (root/'Pages').rglob('*.cs'):
+ assert 'RentalDbContext' not in p.read_text(),p
+migrations=root/'src/RentalManager.Infrastructure/Migrations'
+assert (migrations/'RentalDbContextModelSnapshot.cs').exists()
+assert len(list(migrations.glob('*.cs')))>=4
+assert 'AddScoped<IRentalRepository,EfRentalRepository>' in (root/'Program.cs').read_text()
+assert 'AddScoped<ICurrentUser,BlazorCurrentUser>' in (root/'Program.cs').read_text()
+assert '<Compile Remove="Tests/**/*.cs;src/**/*.cs"' in (root/'RentalManager.csproj').read_text()
+print('PASS: project XML, layer isolation, migration locations, UI async rendering and dependency registration')

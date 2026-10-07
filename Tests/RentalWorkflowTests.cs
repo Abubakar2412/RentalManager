@@ -19,7 +19,7 @@ public class RentalWorkflowTests {
   var cs=new SqlConnectionStringBuilder(Environment.GetEnvironmentVariable("RENTAL_TEST_CONNECTION")??@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;TrustServerCertificate=true;");
   cs.InitialCatalog="Chwaya_RentalTest_"+Guid.NewGuid().ToString("N");
   var options=new DbContextOptionsBuilder<RentalDbContext>().UseSqlServer(cs.ConnectionString).Options;
-  var factory=new Factory(options);var service=new RentalService(factory,new Auth());
+  var factory=new Factory(options);var service=new RentalService(new EfRentalRepository(factory,new HtmlContractRenderer()),new BlazorCurrentUser(new Auth()));
   await using var verify=factory.CreateDbContext();
   try {
    Assert.False(verify.Database.HasPendingModelChanges());
@@ -28,9 +28,9 @@ public class RentalWorkflowTests {
    var tenant=new Tenant{FullName="Test <script>alert(1)</script>",NationalId="TEST-001",Phone="000000",Address="Test area",AccountNumber="000123"};
    await service.SaveAsync(tenant);
    foreach(var kind in new[]{"House","Shop"}) {
-    var property=new Property{Kind=kind,Name="Test "+kind,Address="Test area",Bedrooms=kind=="House"?2:0,MonthlyRent=650000,BusinessType=kind=="Shop"?"Retail":""};
+    var property=new Property{Kind=kind,Name="Test "+kind,BuildingNumber="TEST-01",Address="Test area",Bedrooms=kind=="House"?2:0,MonthlyRent=650000,BusinessType=kind=="Shop"?"Retail":""};
     await service.SaveAsync(property);
-    var lease=new Lease{PropertyId=property.Id,TenantId=tenant.Id,StartDate=new(2026,1,1),EndDate=new(2026,12,31),MonthlyRent=650000,Deposit=650000};
+    var lease=new Lease{PropertyId=property.Id,TenantId=tenant.Id,StartDate=new(2026,1,1),EndDate=new(2026,12,31),MonthlyRent=650000,Deposit=650000,LandlordWitnessName="Landlord witness",LandlordWitnessPhone="000001",WitnessName="Tenant witness",WitnessPhone="000002"};
     await service.SaveAsync(lease);
     await Assert.ThrowsAsync<InvalidOperationException>(()=>service.SaveAsync(new Lease{PropertyId=property.Id,TenantId=tenant.Id,StartDate=lease.StartDate,EndDate=lease.EndDate,MonthlyRent=650000}));
     await using(var direct=factory.CreateDbContext()) {
@@ -42,7 +42,7 @@ public class RentalWorkflowTests {
     var html=await verify.Contracts.AsNoTracking().Where(x=>x.Id==contractId).Select(x=>x.Html).SingleAsync();
     Assert.Contains("&lt;script&gt;",html);Assert.DoesNotContain("<script>alert(1)</script>",html);Assert.Contains("001122",html);
     Assert.Contains(kind=="Shop"?"commercial shop use":"residential use",html);
-    await Assert.ThrowsAsync<DbUpdateException>(()=>service.DeleteAsync(property));
+    await Assert.ThrowsAsync<RentalPersistenceException>(()=>service.DeleteAsync(property));
     var original=html;tenant.Phone="001111";await service.SaveAsync(tenant);
     Assert.Equal(original,await verify.Contracts.AsNoTracking().Where(x=>x.Id==contractId).Select(x=>x.Html).SingleAsync());
    }

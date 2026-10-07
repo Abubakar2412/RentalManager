@@ -8,5 +8,5 @@
 @if(Data is not null){<div class="panel tableWrap"><table><thead><tr><th>Contract</th><th>Lease</th><th>Generated UTC</th><th>Document</th></tr></thead><tbody>@foreach(var c in Data.Contracts){<tr><td>#@c.Id</td><td>RM-@c.LeaseId.ToString("D6")</td><td>@c.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</td><td><a href="@($"/documents/contracts/{c.Id}")" target="_blank" rel="noopener" data-enhance-nav="false">Open / Print / Save PDF</a></td></tr>}@if(Data.Contracts.Count==0){<tr><td colspan="4" class="empty">Generate your first agreement from Leases.</td></tr>}</tbody></table></div>}
 @code{
  RentalData? Data;string Error="";
- protected override async Task OnInitializedAsync(){try{Data=await Service.LoadAsync();}catch(Exception e){Error=RentalService.Error(e);}}
+ protected override async Task OnInitializedAsync(){try{Data=await Service.LoadAsync(RentalLoadScope.Contracts);}catch(Exception e){Error=RentalService.Error(e);}}
 }

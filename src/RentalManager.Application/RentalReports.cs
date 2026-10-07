@@ -21,19 +21,20 @@ public static class RentalReports {
  public static List<MonthlyRentRow> Rent(RentalData data, DateOnly month, int? tenantId = null) {
   var start = new DateOnly(month.Year, month.Month, 1);
   var end = start.AddMonths(1).AddDays(-1);
+  var paidByLease=data.Payments.Where(p=>p.Kind=="Rent"&&p.Period.Year==start.Year&&p.Period.Month==start.Month).GroupBy(p=>p.LeaseId).ToDictionary(g=>g.Key,g=>g.Sum(p=>p.Amount));
+  var properties=data.Properties.ToDictionary(p=>p.Id);var tenants=data.Tenants.ToDictionary(t=>t.Id);
   return data.Leases.Where(l => l.Status != "Cancelled" && l.StartDate <= end && l.EndDate >= start
     && (tenantId == null || l.TenantId == tenantId))
-   .Select(l => new MonthlyRentRow(l.Id, l.TenantId, data.TenantName(l.TenantId), data.PropertyName(l.PropertyId),
-    data.Properties.FirstOrDefault(p => p.Id == l.PropertyId)?.Kind ?? "Unknown",
-    l.MonthlyRent, data.Payments.Where(p => p.LeaseId == l.Id && p.Kind == "Rent"
-     && p.Period.Year == start.Year && p.Period.Month == start.Month).Sum(p => p.Amount),
+   .Select(l => new MonthlyRentRow(l.Id, l.TenantId, tenants.GetValueOrDefault(l.TenantId)?.FullName??"Unknown tenant", properties.GetValueOrDefault(l.PropertyId)?.Name??"Unknown property",
+    properties.GetValueOrDefault(l.PropertyId)?.Kind ?? "Unknown",
+    l.MonthlyRent, paidByLease.GetValueOrDefault(l.Id),
     new DateOnly(start.Year, start.Month, l.DueDay) < l.StartDate ? l.StartDate : new DateOnly(start.Year, start.Month, l.DueDay)))
    .OrderBy(r => r.Tenant).ThenBy(r => r.Property).ThenBy(r => r.LeaseId).ToList();
  }
- public static List<Payment> Receipts(RentalData data, DateOnly month, int? tenantId = null) =>
-  data.Payments.Where(p => p.PaidOn.Year == month.Year && p.PaidOn.Month == month.Month
-   && (tenantId == null || data.Leases.Any(l => l.Id == p.LeaseId && l.TenantId == tenantId)))
-   .OrderBy(p => p.PaidOn).ThenBy(p => p.Id).ToList();
+ public static List<Payment> Receipts(RentalData data, DateOnly month, int? tenantId = null) {
+  var tenantLeases=tenantId is null ? null : data.Leases.Where(l=>l.TenantId==tenantId).Select(l=>l.Id).ToHashSet();
+  return data.Payments.Where(p=>p.PaidOn.Year==month.Year&&p.PaidOn.Month==month.Month&&(tenantLeases is null||tenantLeases.Contains(p.LeaseId))).OrderBy(p=>p.PaidOn).ThenBy(p=>p.Id).ToList();
+ }
  public static string Csv(IEnumerable<MonthlyRentRow> rows, DateOnly month, string currency) {
   static string Cell(object value) {
    var text = Convert.ToString(value, CultureInfo.InvariantCulture) ?? "";

@@ -19,6 +19,7 @@
 }
 else
 {
+    var receipts=Receipts.ToList();
     <div class="toolbar"><input @bind="Search" @bind:event="oninput" placeholder="Search records…" aria-label="Search" /><div><button @onclick="Refresh" disabled="@Busy">Refresh</button><button @onclick="Export">Export monthly allocations CSV</button><button class="primary" @onclick="Add">+ Add @Singular</button></div></div>
     @if (Editor is not null)
     {
@@ -31,7 +32,7 @@ else
     <div class="panel tableWrap"><table>
     <thead><tr><th>Reference</th><th>Tenant / property</th><th>Paid on</th><th>Months covered</th><th>Total paid</th><th>Kind</th><th>Method</th><th>Actions</th></tr></thead>
     <tbody>
-    @foreach(var receipt in Receipts) {
+    @foreach(var receipt in receipts) {
       var payment=receipt.First;var lease=Data.Leases.FirstOrDefault(l=>l.Id==payment.LeaseId);
       <tr><td>@receipt.Reference</td><td>@(lease is null ? $"Lease #{payment.LeaseId}" : $"{Data.TenantName(lease.TenantId)} · {Data.PropertyName(lease.PropertyId)}")</td>
       <td>@payment.PaidOn.ToString("yyyy-MM-dd")</td><td>@receipt.Start.ToString("MMM yyyy")@(receipt.Payments.Count>1 ? " – "+receipt.End.ToString("MMM yyyy") : "") · @receipt.Payments.Count month(s)</td>
@@ -44,7 +45,7 @@ else
        </tbody></table></td></tr>
       }
     }
-    @if(!Receipts.Any()){<tr><td colspan="8" class="empty">No payments found.</td></tr>}
+    @if(receipts.Count==0){<tr><td colspan="8" class="empty">No payments found.</td></tr>}
     </tbody></table></div>
 
 @if (Section == "payments")
@@ -70,7 +71,7 @@ else
     {
         try
         {
-            Data = await Service.LoadAsync();
+            Data = await Service.LoadAsync(RentalLoadScope.Core);
         }
         catch (Exception e)
         {
@@ -102,7 +103,7 @@ else
     };
 
     static string Label(string s) => s switch { "PropertyId" => "House / shop", "TenantId" => "Tenant", "LeaseId" => "Lease", _ => System.Text.RegularExpressions.Regex.Replace(s, "([a-z])([A-Z])", "$1 $2") };
-    async Task<string> Value(IEntity record, string key)
+    string Value(IEntity record, string key)
     {
         if (record is Property prop && key == "Available") return Data!.Leases.Any(l => l.PropertyId == prop.Id && Data.IsCurrent(l)) ? "Occupied" : prop.Available ? "Available" : "Unavailable";
         if (key == "PropertyId") return Data!.PropertyName((int)record.GetType().GetProperty(key)!.GetValue(record)!);

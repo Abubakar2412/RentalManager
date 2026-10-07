@@ -52,8 +52,8 @@ The template preserves your requested sa user, trust-certificate and pool settin
 Database:AutoMigrate defaults to true. Startup calls Database.MigrateAsync() and applies only pending migration files through __EFMigrationsHistory.
 
 Included:
-- Migrations/20261005130000_InitialRentalSqlServer.cs
-- Migrations/RentalDbContextModelSnapshot.cs
+- src/RentalManager.Infrastructure/Migrations/20261005140225_FirstTime-v11.cs
+- src/RentalManager.Infrastructure/Migrations/RentalDbContextModelSnapshot.cs
 - Database/InitialSchema.reference.sql, for review only.
 
 Do not execute the reference SQL first; let EF apply its migration. Startup does not call EnsureCreated or delete a database.
@@ -118,8 +118,8 @@ The database starts empty. Previous SQLite records are not automatically importe
 |---|---|
 | Program.cs | Server rendering, authentication, SQL selection, migrations |
 | Models.cs | EF entities and validation |
-| Data/RentalDbContext.cs | DbSets, relationships and constraints |
-| Services/RentalService.cs | Shared CRUD/payment/lease rules |
+| src/RentalManager.Infrastructure/RentalDbContext.cs | DbSets, relationships and constraints |
+| src/RentalManager.Application/RentalService.cs | Shared CRUD/payment/lease rules |
 | Components/Pages | Blazor screens |
 | Components/Shared/RecordEditor.razor | Reusable C# form editor |
 | Pages/Account | Cookie login, setup, logout and password forms |
@@ -161,3 +161,15 @@ Each application section has a **PDF report** button. Reports provides separate 
 ## Shop No. 6 contract baseline
 
 The supplied Kiswahili agreement is translated in [Docs/ShopContract-English.md](Docs/ShopContract-English.md), with implementation requirements and setup in [Docs/Contract-Requirements.md](Docs/Contract-Requirements.md). Shop leases support six-month payment and renewal intervals, building identification and separate witnesses. New rent payments can allocate a total across 1–12 rental months in a single transaction. Existing saved contract snapshots and existing monthly payment intervals are retained.
+
+## Clean Architecture
+
+See [Docs/Clean-Architecture.md](Docs/Clean-Architecture.md) for the project boundaries, validation commands and known limits. Open RentalManager.sln in Visual Studio; the existing root RentalManager.csproj remains the web startup project. Domain and Application have no ASP.NET Core or Entity Framework dependencies. Infrastructure contains SQL Server access, migrations and password hashing. Web supplies the Blazor UI, session adapter and HTML/PDF presentation.
+
+Migration command after the restructure:
+
+```bash
+dotnet ef database update --project src/RentalManager.Infrastructure --startup-project .
+```
+
+Android/iOS feasibility and prerequisites are in [Docs/Mobile.md](Docs/Mobile.md). This change does not include a native mobile binary.
