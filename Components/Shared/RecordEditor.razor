@@ -4,6 +4,9 @@
  <h2>@(Record.Id==0?"Add record":"Edit record")</h2>
  <EditForm Model="@Record" OnValidSubmit="Save" FormName="record-editor">
   <DataAnnotationsValidator /><ValidationSummary />
+  @if(Record is Property){<p class="hint">Advertised rent is the suggested price. Reports use the agreed rent on the lease; these amounts are not added together.</p>}
+  @if(Record is Lease){<p class="hint">This is the single monthly charge for this lease. Deposit is separate and is not monthly rent.</p>}
+  @if(Record is Payment){<p class="hint">Enter only the money received in this payment. A payment reduces the rent balance; it does not add another rent charge.</p>}
   <div class="formGrid">
    @foreach(var field in Fields) {
     var options=Options(field.Name);
@@ -37,7 +40,7 @@
  [Parameter] public EventCallback OnCancel {get;set;}
  bool Busy;string Error="";
  IEnumerable<System.Reflection.PropertyInfo> Fields=>Record.GetType().GetProperties().Where(p=>p.Name!="Id"&&p.Name!="RowVersion"&& !(Record is Property prop&&((prop.Kind=="House"&&p.Name=="BusinessType")||(prop.Kind=="Shop"&&p.Name=="Bedrooms"))));
- static string Label(string s)=>s switch{"PropertyId"=>"House / shop","TenantId"=>"Tenant","LeaseId"=>"Lease","Period"=>"Rental period (month)","FloorArea"=>"Floor area (m²)","BusinessType"=>"Permitted business activity",_=>System.Text.RegularExpressions.Regex.Replace(s,"([a-z])([A-Z])","$1 $2")};
+ string Label(string s)=>s switch{"MonthlyRent" when Record is Property=>"Advertised monthly rent","MonthlyRent" when Record is Lease=>"Agreed monthly rent","Amount" when Record is Payment=>"Amount paid (this payment)","PropertyId"=>"House / shop","TenantId"=>"Tenant","LeaseId"=>"Lease","Period"=>"Rental period (month)","FloorArea"=>"Floor area (m²)","BusinessType"=>"Permitted business activity",_=>System.Text.RegularExpressions.Regex.Replace(s,"([a-z])([A-Z])","$1 $2")};
  string Format(System.Reflection.PropertyInfo p)=>p.GetValue(Record) switch{DateOnly d=>d.ToString("yyyy-MM-dd"),decimal n=>n.ToString(CultureInfo.InvariantCulture),null=>"",var v=>v.ToString()??""};
  static bool IsLong(System.Reflection.PropertyInfo p)=>new[]{"Amenities","SpecialTerms","ContractTerms","Notes"}.Contains(p.Name);
  static int MaxLength(System.Reflection.PropertyInfo p)=>p.GetCustomAttributes(typeof(StringLengthAttribute),true).Cast<StringLengthAttribute>().FirstOrDefault()?.MaximumLength??250;
@@ -62,6 +65,7 @@
    object? value=field.PropertyType==typeof(bool)?args.Value is true:field.PropertyType==typeof(int)?int.Parse(text,CultureInfo.InvariantCulture):field.PropertyType==typeof(decimal)?decimal.Parse(text,CultureInfo.InvariantCulture):field.PropertyType==typeof(DateOnly)?DateOnly.ParseExact(text,"yyyy-MM-dd",CultureInfo.InvariantCulture):field.Name=="Email"&&string.IsNullOrWhiteSpace(text)?null:text.Trim();
    field.SetValue(Record,value);Error="";
    if(Record is Lease l&&field.Name=="PropertyId"){var prop=Data.Properties.FirstOrDefault(p=>p.Id==l.PropertyId);if(prop!=null&&l.Id==0)l.MonthlyRent=prop.MonthlyRent;}
+   if(Record is Payment payment && payment.Id==0 && (field.Name=="LeaseId" || field.Name=="Kind") && payment.Kind=="Rent" && payment.Amount==0){var lease=Data.Leases.FirstOrDefault(x=>x.Id==payment.LeaseId);if(lease!=null)payment.Amount=lease.MonthlyRent;}
    if(Record is Property shop&&shop.Kind=="Shop")shop.Bedrooms=0;
   }catch(FormatException){Error=$"Enter a valid value for {Label(field.Name)}.";}
  }
