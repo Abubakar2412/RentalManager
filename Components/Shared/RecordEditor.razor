@@ -9,7 +9,9 @@
     var options=Options(field.Name);
     <label class="@(IsLong(field)?"full":"")">
      @Label(field.Name) @(field.IsDefined(typeof(RequiredAttribute),true)?"*":"")
-     @if(field.PropertyType==typeof(bool)) {
+     @if(Record is Payment && field.Name=="Period") {
+      <input type="month" disabled="@Busy" value="@(((Payment)Record).Period.ToString("yyyy-MM"))" @onchange="ChangePeriod" />
+     } else if(field.PropertyType==typeof(bool)) {
       <input type="checkbox" checked="@((bool)field.GetValue(Record)!)" disabled="@Busy" @onchange="e=>Change(field,e)" />
      } else if(options.Count>0 || new[]{"PropertyId","TenantId","LeaseId"}.Contains(field.Name)) {
       <select disabled="@Busy" @onchange="e=>Change(field,e)">
@@ -50,6 +52,10 @@
   "LeaseId"=>Data.Leases.Select(x=>(x.Id.ToString(),$"#{x.Id} · {Data.PropertyName(x.PropertyId)} · {Data.TenantName(x.TenantId)}")).ToList(),
   _=>[]
  };
+ void ChangePeriod(ChangeEventArgs args){
+  if(DateOnly.TryParseExact((args.Value?.ToString()??"")+"-01","yyyy-MM-dd",CultureInfo.InvariantCulture,DateTimeStyles.None,out var month)){((Payment)Record).Period=month;Error="";}
+  else Error="Enter a valid value for Rental period (month).";
+ }
  void Change(System.Reflection.PropertyInfo field,ChangeEventArgs args){
   try{
    var text=args.Value?.ToString()??"";

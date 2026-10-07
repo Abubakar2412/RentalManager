@@ -3,6 +3,7 @@
 @inject RentalService Service
 <PageTitle>Overview · Chwaya Rental Manager</PageTitle>
 <header><div><div class="eyebrow">CHWAYA RENTAL MANAGER</div><h1>Portfolio overview</h1><p>Houses, shops and rent collections.</p></div></header>
+<PdfReport Title="Home report" />
 @if(Error.Length>0){<p class="error">@Error</p>}
 @if(Data is null){<p>Loading portfolio…</p>}else{
  var active=Data.Leases.Where(Data.IsCurrent).ToList();

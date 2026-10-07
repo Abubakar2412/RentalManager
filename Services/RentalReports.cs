@@ -7,7 +7,17 @@ public record MonthlyRentRow(int LeaseId, int TenantId, string Tenant, string Pr
  public decimal Credit => Math.Max(0, Paid - Rent);
 }
 
+public record AnnualRentRow(DateOnly Month, decimal Rent, decimal Paid, decimal Balance, decimal Credit, decimal Received);
+
 public static class RentalReports {
+ public static List<AnnualRentRow> Annual(RentalData data, int year, int? tenantId = null) {
+  if(year < 1 || year >= 9999) throw new ArgumentOutOfRangeException(nameof(year));
+  return Enumerable.Range(1,12).Select(m => {
+   var month=new DateOnly(year,m,1);var rows=Rent(data,month,tenantId);
+   return new AnnualRentRow(month,rows.Sum(r=>r.Rent),rows.Sum(r=>r.Paid),rows.Sum(r=>r.Balance),rows.Sum(r=>r.Credit),Receipts(data,month,tenantId).Sum(p=>p.Amount));
+  }).ToList();
+ }
+
  public static List<MonthlyRentRow> Rent(RentalData data, DateOnly month, int? tenantId = null) {
   var start = new DateOnly(month.Year, month.Month, 1);
   var end = start.AddMonths(1).AddDays(-1);

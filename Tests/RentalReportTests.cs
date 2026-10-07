@@ -30,4 +30,16 @@ public class RentalReportTests {
   var csv = RentalReports.Csv([new(1,2,"=cmd,\"test\"", "Shop", "Shop", 100, 0, new(2026,10,1))], new(2026,10,1), "TZS");
   Assert.Contains("2026-10", csv); Assert.Contains("\"'=cmd,\"\"test\"\"\"", csv); Assert.Contains("Tenant ID", csv);
  }
+ [Fact]
+ public void AnnualTotalsOnlyIncludeCoveredMonthsAndSelectedPerson() {
+  var data = new RentalData {
+   Leases = [new Lease{Id=1,TenantId=1,StartDate=new(2026,3,15),EndDate=new(2026,5,10),MonthlyRent=100},
+    new Lease{Id=2,TenantId=2,StartDate=new(2026,1,1),EndDate=new(2026,12,31),MonthlyRent=200}],
+   Payments = [new Payment{LeaseId=1,Period=new(2026,3,1),PaidOn=new(2026,2,28),Amount=100}]
+  };
+  var annual=RentalReports.Annual(data,2026,1);
+  Assert.Equal(12,annual.Count);Assert.Equal(300m,annual.Sum(r=>r.Rent));
+  Assert.Equal(100m,annual[2].Paid);Assert.Equal(100m,annual[1].Received);
+  Assert.Equal(200m,annual.Sum(r=>r.Balance));Assert.Equal(0m,annual[0].Rent);
+ }
 }

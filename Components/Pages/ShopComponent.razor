@@ -1,4 +1,4 @@
-﻿
+
 @page "/shops"
 
 @attribute [Authorize]
@@ -8,6 +8,7 @@
 @inject ILogger<Records> Logger
 <PageTitle>@Title · Chwaya Rental Manager</PageTitle>
 <header><div><div class="eyebrow">PROPERTY MANAGEMENT</div><h1>@Title</h1><p>@Description</p></div></header>
+<PdfReport Title="Shop report" />
 @if (!string.IsNullOrEmpty(Message))
 {
     <div class="notice" role="status">@Message</div>

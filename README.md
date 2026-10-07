@@ -151,3 +151,9 @@ This is a single-administrator workspace. It does not include online bank paymen
 ## Monthly reports
 
 Open **Reports** beside **Houses** in the sidebar. Select a month and all tenants or one person. Rent reports cover houses and shops and show rent, payments allocated to that rental month, outstanding balances, overpayment credits and due dates per lease. Payments received use the payment date and include rent, deposits and other payments. Cancelled leases are excluded from agreed rent; ended leases remain visible in their historical months. Partial months use the full agreed monthly rent, matching existing statements. Export the filtered rent table with **Export rent CSV**.
+
+## Annual rent and PDF reports
+
+Reports now includes a January–December summary for the selected year's month, filtered by tenant. Monthly agreed rent is taken from leases; annual totals add each covered month rather than multiplying every lease by 12. Future months are projections. Use **Add monthly rent payment** to record a payment, select its lease and rental month, and save; the report refreshes after saving. Houses and shops share this workflow.
+
+Each application section has a **PDF report** button. Reports provides separate buttons for monthly rent, monthly receipts and annual totals. These open a clean report view with repeating table headers; choose **Save as PDF** in the browser print dialog. Allow pop-ups for the application. PDFs reflect the current filters and exclude editor controls and action buttons.
