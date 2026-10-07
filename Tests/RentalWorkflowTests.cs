@@ -19,7 +19,7 @@ public class RentalWorkflowTests {
   var cs=new SqlConnectionStringBuilder(Environment.GetEnvironmentVariable("RENTAL_TEST_CONNECTION")??@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;TrustServerCertificate=true;");
   cs.InitialCatalog="Chwaya_RentalTest_"+Guid.NewGuid().ToString("N");
   var options=new DbContextOptionsBuilder<RentalDbContext>().UseSqlServer(cs.ConnectionString).Options;
-  var factory=new Factory(options);var service=new RentalService(factory,new Auth());
+  var factory=new Factory(options);var service=new RentalService(new EfRentalRepository(factory,new HtmlContractRenderer()),new BlazorCurrentUser(new Auth()));
   await using var verify=factory.CreateDbContext();
   try {
    Assert.False(verify.Database.HasPendingModelChanges());
@@ -42,7 +42,7 @@ public class RentalWorkflowTests {
     var html=await verify.Contracts.AsNoTracking().Where(x=>x.Id==contractId).Select(x=>x.Html).SingleAsync();
     Assert.Contains("&lt;script&gt;",html);Assert.DoesNotContain("<script>alert(1)</script>",html);Assert.Contains("001122",html);
     Assert.Contains(kind=="Shop"?"commercial shop use":"residential use",html);
-    await Assert.ThrowsAsync<DbUpdateException>(()=>service.DeleteAsync(property));
+    await Assert.ThrowsAsync<RentalPersistenceException>(()=>service.DeleteAsync(property));
     var original=html;tenant.Phone="001111";await service.SaveAsync(tenant);
     Assert.Equal(original,await verify.Contracts.AsNoTracking().Where(x=>x.Id==contractId).Select(x=>x.Html).SingleAsync());
    }

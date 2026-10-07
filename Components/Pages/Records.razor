@@ -19,7 +19,7 @@
  <div class="panel tableWrap"><table><thead><tr>@foreach(var column in Columns){<th>@Label(column)</th>}<th>Actions</th></tr></thead><tbody>
  @foreach(var record in Filtered){
      <tr>@foreach(var column in Columns){
-         <td>@((Value(record,column)).Result)</td>}<td><button @onclick="()=>Edit(record)">Edit</button><button class="danger" @onclick="()=>ToDelete=record">Delete</button>@if(record is Lease l){<button disabled="@Busy" @onclick="()=>Generate(l.Id)">Generate contract</button><button @onclick="()=>Statement(l)">Statement</button>}</td></tr>}
+         <td>@Value(record,column)</td>}<td><button @onclick="()=>Edit(record)">Edit</button><button class="danger" @onclick="()=>ToDelete=record">Delete</button>@if(record is Lease l){<button disabled="@Busy" @onclick="()=>Generate(l.Id)">Generate contract</button><button @onclick="()=>Statement(l)">Statement</button>}</td></tr>}
  @if(!Filtered.Any()){<tr><td colspan="@(Columns.Length+1)" class="empty">No records found. Add your first @Singular.</td></tr>}
  </tbody></table></div>
  @if(Section=="payments"){<p class="hint">Houses and shops use the same payment method, rent-period allocation and deposit rules.</p>}
@@ -38,17 +38,17 @@
     async Task Refresh()
     {
         try{
-            Data=await Service.LoadAsync();
+            Data=await Service.LoadAsync(RentalLoadScope.Core);
         }
         catch(Exception e)
         {
             Message=RentalService.Error(e);
             Logger.LogError(e,"Loading rental records failed");
         }
-        
+
     }
 
-    IEnumerable<IEntity> Items=>Data is null?[]:Section 
+    IEnumerable<IEntity> Items=>Data is null?[]:Section
     switch{
         "houses"=>Data.Properties.Where(p=>p.Kind=="House").Cast<IEntity>(),
         "shops"=>Data.Properties.Where(p=>p.Kind=="Shop").Cast<IEntity>(),
@@ -58,7 +58,7 @@
     };
 
     IEnumerable<IEntity> Filtered=>Items.Where(x=>string.IsNullOrWhiteSpace(Search)||string.Join(" ",x.GetType().GetProperties().Where(p=>p.Name!="RowVersion").Select(p=>p.GetValue(x))).Contains(Search,StringComparison.OrdinalIgnoreCase)|| (x is Lease l&&$"{Data!.PropertyName(l.PropertyId)} {Data.TenantName(l.TenantId)}".Contains(Search,StringComparison.OrdinalIgnoreCase)));
-    string[] Columns=>Section 
+    string[] Columns=>Section
     switch{
         "houses"=>["Name","Address","Bedrooms","Bathrooms","MonthlyRent","Available"],
         "shops"=>["Name","Address","FloorArea","BusinessType","MonthlyRent","Available"],
@@ -68,13 +68,13 @@
     };
 
     static string Label(string s)=>s switch{"PropertyId"=>"House / shop","TenantId"=>"Tenant","LeaseId"=>"Lease",_=>System.Text.RegularExpressions.Regex.Replace(s,"([a-z])([A-Z])","$1 $2")};
-    async Task<string> Value(IEntity record,string key){
+    string Value(IEntity record,string key){
         if(record is Property prop&&key=="Available")return Data!.Leases.Any(l=>l.PropertyId==prop.Id&&Data.IsCurrent(l))?"Occupied":prop.Available?"Available":"Unavailable";
         if(key=="PropertyId")return Data!.PropertyName((int)record.GetType().GetProperty(key)!.GetValue(record)!);
         if(key=="TenantId")return Data!.TenantName((int)record.GetType().GetProperty(key)!.GetValue(record)!);
         var v=record.GetType().GetProperty(key)?.GetValue(record);
         return v switch{decimal d when key=="MonthlyRent"||key=="Deposit"||key=="Amount"=>Data!.Money(d),DateOnly d=>d.ToString("yyyy-MM-dd"),bool b=>b?"Available":"Unavailable",null=>"",_=>v.ToString()??""};
-        
+
     }
 
     void Add(){Message="";Editor=Section switch{"houses"=>new Property{

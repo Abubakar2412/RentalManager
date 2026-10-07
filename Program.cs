@@ -16,10 +16,14 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddRazorPages();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(o=>{
  o.LoginPath="/Account/Login";o.Cookie.Name="Chwaya.Rental.Session";o.Cookie.HttpOnly=true;o.Cookie.SameSite=SameSiteMode.Strict;o.Cookie.SecurePolicy=CookieSecurePolicy.SameAsRequest;o.ExpireTimeSpan=TimeSpan.FromHours(8);o.SlidingExpiration=false;
- o.Events.OnValidatePrincipal=async context=>{var user=context.Principal;var name=user?.Identity?.Name;var stamp=user?.FindFirst("securityStamp")?.Value;var factory=context.HttpContext.RequestServices.GetRequiredService<IDbContextFactory<RentalDbContext>>();await using var db=await factory.CreateDbContextAsync();if(name is null||!await db.Admins.AnyAsync(x=>x.Id==1&&x.Username==name&&x.SecurityStamp==stamp)){context.RejectPrincipal();await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);}};
+ o.Events.OnValidatePrincipal=async context=>{var user=context.Principal;var name=user?.Identity?.Name;var stamp=user?.FindFirst("securityStamp")?.Value;var accounts=context.HttpContext.RequestServices.GetRequiredService<IAdminAccountService>();if(name is null||!await accounts.ValidateAsync(name,stamp)){context.RejectPrincipal();await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);}};
 });
 builder.Services.AddAuthorization();builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<AuthenticationStateProvider,RentalAuthenticationStateProvider>();
+builder.Services.AddScoped<ICurrentUser,BlazorCurrentUser>();
+builder.Services.AddScoped<IContractRenderer,HtmlContractRenderer>();
+builder.Services.AddScoped<IRentalRepository,EfRentalRepository>();
+builder.Services.AddScoped<IAdminAccountService,AdminAccountService>();
 builder.Services.AddScoped<RentalService>();
 builder.Services.AddRateLimiter(o=>o.AddPolicy("login",context=>RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString()??"local",_=>new FixedWindowRateLimiterOptions{PermitLimit=20,Window=TimeSpan.FromMinutes(1),QueueLimit=0})));
 var app=builder.Build();

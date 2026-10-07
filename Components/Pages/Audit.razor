@@ -7,5 +7,5 @@
 @if(Data is not null){<div class="panel tableWrap"><table><thead><tr><th>UTC date</th><th>Administrator</th><th>Action</th><th>Record</th></tr></thead><tbody>@foreach(var a in Data.Audit){<tr><td>@a.At.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</td><td>@a.Actor</td><td>@a.Action</td><td>@a.Entity #@a.EntityId</td></tr>}</tbody></table></div>}
 @code{
  RentalData? Data;string Error="";
- protected override async Task OnInitializedAsync(){try{Data=await Service.LoadAsync();}catch(Exception e){Error=RentalService.Error(e);}}
+ protected override async Task OnInitializedAsync(){try{Data=await Service.LoadAsync(RentalLoadScope.Audit);}catch(Exception e){Error=RentalService.Error(e);}}
 }

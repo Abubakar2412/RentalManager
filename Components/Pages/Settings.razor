@@ -12,6 +12,6 @@
 @code{
  RentalData? Data;string Message="";
  protected override async Task OnInitializedAsync()=>await Load();
- async Task Load(){try{Data=await Service.LoadAsync();}catch(Exception e){Message=RentalService.Error(e);}}
+ async Task Load(){try{Data=await Service.LoadAsync(RentalLoadScope.Core);}catch(Exception e){Message=RentalService.Error(e);}}
  async Task Saved(){await Load();Message="Settings saved.";}
 }

@@ -38,7 +38,7 @@ else
                 @foreach (var record in Filtered)
                 {
                     <tr>@foreach(var column in Columns){
-                            <td>@((Value(record, column)).Result)</td>
+                            <td>@Value(record, column)</td>
                     }
                     <td><button @onclick="() => Edit(record)">Edit</button><button class="danger" @onclick="() => ToDelete = record">Delete</button>@if(record is Lease l){
                         <button disabled="@Busy" @onclick="() => Generate(l.Id)">Generate contract</button><button @onclick="() => Statement(l)">Statement</button>
@@ -72,14 +72,14 @@ else
     {
         try
         {
-            Data = await Service.LoadAsync();
+            Data = await Service.LoadAsync(RentalLoadScope.Core);
         }
         catch (Exception e)
         {
             Message = RentalService.Error(e);
             Logger.LogError(e, "Loading rental records failed");
         }
-        
+
     }
 
     IEnumerable<IEntity> Items => Data is null ? [] : Section
@@ -104,7 +104,7 @@ else
     };
 
     static string Label(string s) => s switch { "PropertyId" => "House / shop", "TenantId" => "Tenant", "LeaseId" => "Lease", _ => System.Text.RegularExpressions.Regex.Replace(s, "([a-z])([A-Z])", "$1 $2") };
-    async Task<string> Value(IEntity record, string key)
+    string Value(IEntity record, string key)
     {
         if (record is Property prop && key == "Available") return Data!.Leases.Any(l => l.PropertyId == prop.Id && Data.IsCurrent(l)) ? "Occupied" : prop.Available ? "Available" : "Unavailable";
         if (key == "PropertyId") return Data!.PropertyName((int)record.GetType().GetProperty(key)!.GetValue(record)!);

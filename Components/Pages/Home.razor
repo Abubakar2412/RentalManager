@@ -16,17 +16,17 @@
 
 @code {
     RentalData? Data;string Error="";
-    protected override async Task OnInitializedAsync(){try{Data=await Service.LoadAsync();}catch(Exception e){Error=RentalService.Error(e);}}
+    protected override async Task OnInitializedAsync(){try{Data=await Service.LoadAsync(RentalLoadScope.Core);}catch(Exception e){Error=RentalService.Error(e);}}
 
     // protected override async Task OnAfterRenderAsync(bool firstRender)
     // {
     //     await base.OnAfterRenderAsync(firstRender);
-    //     try { 
-    //         Data = await Service.LoadAsync(); 
-    //     } 
-    //     catch (Exception e) 
-    //     { 
-    //         Error = RentalService.Error(e); 
+    //     try {
+    //         Data = await Service.LoadAsync(RentalLoadScope.Core);
+    //     }
+    //     catch (Exception e)
+    //     {
+    //         Error = RentalService.Error(e);
     //     }
     // }
 }
