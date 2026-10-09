@@ -4,10 +4,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 
 using RentalManager.Services;
 namespace RentalManager.Pages.Account;
-[Authorize]
+[Authorize,EnableRateLimiting("login")]
 public class PasswordModel(IAdminAccountService accounts) : PageModel {
  [BindProperty,Required,StringLength(200)] public string CurrentPassword {get;set;}="";
  [BindProperty,Required,StringLength(200,MinimumLength=12)] public string NewPassword {get;set;}="";

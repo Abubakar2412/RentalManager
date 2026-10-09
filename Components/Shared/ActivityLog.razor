@@ -1,6 +1,6 @@
 @inject RentalService Service
 @inject IJSRuntime JS
-<section class="panel">
+<section class="panel settingsPanel">
 <h2>Activity log</h2><p>Search all saved activity. Dates are UTC; reports contain the displayed page.</p>
 <form @onsubmit="Apply" @onsubmit:preventDefault="true" class="activityFilters">
 <label>Administrator or record<input @bind="Search" maxlength="80" /></label>
