@@ -26,4 +26,4 @@ Deploy the matching code and migration together. Existing records receive empty 
 
 ## Validation
 
-Unit tests cover authorization and invalid inputs before persistence. SQL workflow checks profile persistence, comment author/status/search/paging, notification creation/read state/paging and account preservation when upgrading from the previous migration. GitHub Actions builds the Razor pages. Browser layout and PDF checks should also be performed in the deployed environment.
+Unit tests cover authorization and invalid inputs before persistence. SQL workflow checks profile persistence, comment author/status/search/paging, notification creation/read state/paging and account preservation when upgrading from the previous migration. GitHub Actions builds the Razor pages and runs a headless browser check for profile persistence, escaped comment rendering, status updates, notification read state, desktop footer placement and mobile horizontal overflow. Screenshot artifacts are kept on the workflow run. PDF checks should also be performed in the deployed environment.

@@ -39,3 +39,30 @@ jobs:
           done
           echo 'SQL Server did not become ready'; exit 1
       - run: dotnet test Tests/RentalManager.Tests.csproj --configuration Release --filter 'FullyQualifiedName~HousesAndShopsUseTheSamePaymentsAndContracts'
+      - name: Install browser test tools
+        run: |
+          npm install --prefix "$RUNNER_TEMP/rental-browser" --no-save --package-lock=false playwright
+          "$RUNNER_TEMP/rental-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Check browser workflows and responsive layout
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          ASPNETCORE_URLS: http://127.0.0.1:5080
+          Database__ConnectionName: BrowserTest
+        run: |
+          export ConnectionStrings__BrowserTest="${RENTAL_TEST_CONNECTION}Database=Chwaya_BrowserTest;"
+          export NODE_PATH="$RUNNER_TEMP/rental-browser/node_modules"
+          dotnet run --project RentalManager.csproj --configuration Release --no-build --no-launch-profile > /tmp/rental-browser-server.log 2>&1 &
+          rental_server_pid=$!
+          trap 'kill "$rental_server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:5080/Account/Login >/dev/null; then break; fi
+            sleep 2
+          done
+          node Tools/browser_check.cjs || { cat /tmp/rental-browser-server.log; exit 1; }
+      - name: Upload UI check screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rental-ui-check
+          path: /tmp/rental-comments-*.png
+          if-no-files-found: ignore

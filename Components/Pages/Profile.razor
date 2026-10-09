@@ -14,5 +14,5 @@
  UserProfile? UserDetails;ProfileEdit Edit=new();string Error="",Message="";bool Busy;
  string Initials=>string.Concat((UserDetails?.DisplayName.Length>0?UserDetails.DisplayName:UserDetails?.Username??"User").Split(' ',StringSplitOptions.RemoveEmptyEntries).Take(2).Select(x=>char.ToUpperInvariant(x[0])));
  protected override async Task OnInitializedAsync(){try{UserDetails=(await Workspace.SummaryAsync()).Profile;Edit=new(){DisplayName=UserDetails.DisplayName.Length==0?UserDetails.Username:UserDetails.DisplayName,Email=UserDetails.Email,Phone=UserDetails.Phone};}catch(Exception e){Error=RentalService.Error(e);}}
- async Task Save(){if(Busy)return;Busy=true;Error="";Message="";try{await Workspace.SaveProfileAsync(Edit);UserDetails=(await Workspace.SummaryAsync()).Profile;Message="UserDetails saved.";}catch(Exception e){Error=RentalService.Error(e);}finally{Busy=false;}}
+ async Task Save(){if(Busy)return;Busy=true;Error="";Message="";try{await Workspace.SaveProfileAsync(Edit);UserDetails=(await Workspace.SummaryAsync()).Profile;Message="Profile saved.";}catch(Exception e){Error=RentalService.Error(e);}finally{Busy=false;}}
 }
