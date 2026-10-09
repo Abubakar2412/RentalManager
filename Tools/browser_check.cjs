@@ -27,8 +27,8 @@ const { chromium } = require('playwright');
     await page.getByRole('button',{name:'Mark resolved',exact:true}).click();await page.locator('.commentCard .badge').filter({hasText:'Resolved'}).waitFor();
     await page.getByRole('button',{name:'Reopen',exact:true}).click();await page.locator('.commentCard .badge').filter({hasText:'Open'}).waitFor();
     await page.screenshot({path:'/tmp/rental-comments-desktop.png',fullPage:true});
-    const desktop=await page.evaluate(()=>{const footer=document.querySelector('.sidebarAccount').getBoundingClientRect();const modules=document.querySelector('.mainNavigation').getBoundingClientRect();const sidebar=document.querySelector('.sidebar').getBoundingClientRect();return{footerBottom:footer.bottom,sidebarBottom:sidebar.bottom,footerTop:footer.top,modulesBottom:modules.bottom};});
-    assert(desktop.footerBottom<=desktop.sidebarBottom&&desktop.sidebarBottom-desktop.footerBottom<40);assert(desktop.modulesBottom<=desktop.footerTop+1);
+    const desktop=await page.evaluate(()=>{const header=document.querySelector('.appHeader').getBoundingClientRect();const main=document.querySelector('main').getBoundingClientRect();const menus=[...document.querySelectorAll('.mainNavigation,.utilityNavigation,.profileLink')].map(x=>x.getBoundingClientRect());return{top:header.top,bottom:header.bottom,mainTop:main.top,contained:menus.every(x=>x.top>=header.top&&x.bottom<=header.bottom)};});
+    assert.equal(desktop.top,0);assert(desktop.bottom<=desktop.mainTop);assert(desktop.contained,'All navigation controls belong in the top header');
     assert.equal(await page.locator('.utilityNavigation a[href="settings"] svg').count(),1);assert.equal(await page.locator('.utilityNavigation a[href="notifications"] svg').count(),1);
     await go('/notifications');await visible('.notificationCard');await page.getByRole('button',{name:'Mark all as read',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.unreadCount'));
     await page.getByRole('button',{name:'Unread',exact:true}).click();await page.getByText('You’re all caught up.',{exact:true}).waitFor();
@@ -36,6 +36,6 @@ const { chromium } = require('playwright');
     await page.setViewportSize({width:390,height:844});await go('/comments');await visible('.utilityNavigation');await visible('.profileLink');
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,'Mobile view must not overflow horizontally');
     await page.screenshot({path:'/tmp/rental-comments-mobile.png',fullPage:true});
-    assert.deepEqual(errors,[]);console.log('PASS: authenticated profile persistence, safe comment rendering/status, notification read state, desktop bottom navigation and mobile layout.');
+    assert.deepEqual(errors,[]);console.log('PASS: authenticated profile persistence, safe comment rendering/status, notification read state, desktop top navigation and mobile layout.');
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1);});

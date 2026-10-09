@@ -1,6 +1,6 @@
 # Profile, comments and notifications
 
-The sidebar keeps rental modules in the upper section. Notifications (bell), Settings (gear), the initials profile card and sign-out are at the bottom. On narrow screens these controls remain visible below the module links.
+Rental modules, Notifications (bell), Settings (gear), the initials profile card and sign-out are grouped in a responsive top navigation bar. On narrower screens, the links wrap into additional rows. The content uses the full page width.
 
 ## User profile
 
@@ -26,4 +26,4 @@ Deploy the matching code and migration together. Existing records receive empty 
 
 ## Validation
 
-Unit tests cover authorization and invalid inputs before persistence. SQL workflow checks profile persistence, comment author/status/search/paging, notification creation/read state/paging and account preservation when upgrading from the previous migration. GitHub Actions builds the Razor pages and runs a headless browser check for profile persistence, escaped comment rendering, status updates, notification read state, desktop footer placement and mobile horizontal overflow. Screenshot artifacts are kept on the workflow run. PDF checks should also be performed in the deployed environment.
+Unit tests cover authorization and invalid inputs before persistence. SQL workflow checks profile persistence, comment author/status/search/paging, notification creation/read state/paging and account preservation when upgrading from the previous migration. GitHub Actions builds the Razor pages and runs a headless browser check for profile persistence, escaped comment rendering, status updates, notification read state, desktop top navigation placement and mobile horizontal overflow. Screenshot artifacts are kept on the workflow run. PDF checks should also be performed in the deployed environment.

@@ -2,7 +2,7 @@
 @implements IDisposable
 @inject WorkspaceService Workspace
 @inject NavigationManager Navigation
-<div class="sidebar">
+<header class="sidebar appHeader">
  <div class="brand">CH<span>Chwaya House<small>Houses &amp; shops</small></span></div>
  <nav class="mainNavigation" aria-label="Rental modules">
   <NavLink href="/" Match="NavLinkMatch.All">Overview</NavLink>
@@ -20,7 +20,7 @@
   <NavLink href="profile" class="profileLink"><span class="avatar">@Initials</span><span><strong>@DisplayName</strong><small>Administrator · My profile</small></span></NavLink>
   <a class="signOutLink" href="/Account/Logout" data-enhance-nav="false"><AppIcon Name="logout" />Sign out</a>
  </div>
-</div>
+</header>
 <main>@Body<footer>Chwaya Rental Manager · Houses and shops</footer></main>
 <div id="blazor-error-ui">Connection interrupted or an error occurred. <a href="" class="reload">Reload</a></div>
 @code{
