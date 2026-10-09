@@ -1,0 +1,23 @@
+@page "/comments"
+@attribute [Authorize]
+@inject WorkspaceService Workspace
+<PageTitle>Comments · Chwaya Rental Manager</PageTitle>
+<header><div><h1>Comments</h1><p>Keep internal rental notes, questions and follow-up items in one place.</p></div><a href="/notifications">Notifications</a></header>
+@if(Error.Length>0){<p class="error" role="alert">@Error</p>}
+@if(Message.Length>0){<p class="notice" role="status">@Message</p>}
+<section class="panel settingsPanel"><h2>Add a comment</h2><p>Comments are internal notes for the administrator. They are not sent to tenants.</p><EditForm Model="Draft" OnValidSubmit="Add" FormName="add-comment"><DataAnnotationsValidator /><ValidationSummary /><label>Subject<InputText @bind-Value="Draft.Subject" maxlength="120" placeholder="For example: Follow up on house maintenance" /></label><label>Comment<InputTextArea @bind-Value="Draft.Message" maxlength="2000" placeholder="Write the details and next action…" /></label><div class="settingsActions"><button type="submit" class="primary" disabled="@Busy">Post comment</button><small>Up to 2,000 characters</small></div></EditForm></section>
+<section class="panel settingsPanel"><h2>Comment history</h2><form @onsubmit="Search" @onsubmit:preventDefault="true" class="activityFilters"><label>Search<input @bind="Term" maxlength="120" placeholder="Subject, message or author" /></label><label>Status<select @bind="Status"><option value="all">All comments</option><option value="open">Open</option><option value="resolved">Resolved</option></select></label><button type="submit" disabled="@Busy">Apply filters</button></form>
+@if(Result is not null){<p>@Result.Total comments · Page @Result.Page</p>@foreach(var comment in Result.Items){<article class="commentCard" @key="comment.Id"><div class="commentHeading"><h3>@comment.Subject</h3><span class="badge @(comment.Resolved?"gray":"")">@(comment.Resolved?"Resolved":"Open")</span></div><p class="commentBody">@comment.Message</p><div class="commentMeta"><span>@comment.Author · @comment.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm") UTC</span><button type="button" disabled="@Busy" @onclick="()=>Toggle(comment)">@(comment.Resolved?"Reopen":"Mark resolved")</button></div></article>}
+@if(Result.Items.Count==0){<div class="empty"><AppIcon Name="comment" /><p>No comments match these filters.</p></div>}
+<div class="settingsActions"><button disabled="@(Busy||Result.Page<=1)" @onclick="Previous">Previous</button><button disabled="@(Busy||Result.Page*25>=Result.Total)" @onclick="Next">Next</button></div>
+}else if(Busy){<p role="status">Loading comments…</p>}
+</section>
+@code{
+ CommentDraft Draft=new();CommentPage? Result;CommentFilter Applied=new();string Term="",Status="all",Error="",Message="";bool Busy;
+ protected override async Task OnInitializedAsync()=>await Load(new());
+ async Task Load(CommentFilter filter){try{Result=await Workspace.CommentsAsync(filter);Applied=filter;}catch(Exception e){Error=RentalService.Error(e);}}
+ async Task Search(){if(Busy)return;Busy=true;Error="";try{await Load(new(Term,Status));}finally{Busy=false;}}
+ async Task Add(){if(Busy)return;Busy=true;Error="";Message="";try{await Workspace.AddCommentAsync(Draft);Draft=new();Term="";Status="all";await Load(new());Message="Comment posted.";}catch(Exception e){Error=RentalService.Error(e);}finally{Busy=false;}}
+ async Task Toggle(RentalComment comment){if(Busy)return;Busy=true;Error="";try{await Workspace.ResolveCommentAsync(comment.Id,!comment.Resolved);await Load(Applied);}catch(Exception e){Error=RentalService.Error(e);}finally{Busy=false;}}
+ Task Previous()=>Load(Applied with{Page=Applied.Page-1});Task Next()=>Load(Applied with{Page=Applied.Page+1});
+}

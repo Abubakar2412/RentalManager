@@ -81,6 +81,9 @@ public class Landlord : IEntity {
  [StringLength(10000)] public string ContractTerms {get;set;}="The premises may be used only for the purpose stated in this agreement. The tenant must keep the premises clean, report damage promptly, and obtain written consent before subletting or making alterations. The landlord is responsible for agreed structural repairs. Utilities are paid by the tenant unless agreed otherwise. The deposit is refunded after inspection, less documented agreed deductions. Any termination and dispute resolution must comply with applicable law.";
 }
 public class Admin {
+ [StringLength(150)] public string DisplayName {get;set;}="";
+ [EmailAddress,StringLength(150)] public string? Email {get;set;}
+ [StringLength(40)] public string Phone {get;set;}="";
  [StringLength(32)] public string SecurityStamp {get;set;}=Guid.NewGuid().ToString("N");
  public int Id {get;set;}=1;
  [Required,StringLength(80)] public string Username {get;set;}="";

@@ -1,18 +1,34 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@inject WorkspaceService Workspace
+@inject NavigationManager Navigation
 <div class="sidebar">
  <div class="brand">N<span>NYUMBA<small>Houses &amp; shops</small></span></div>
- <nav>
+ <nav class="mainNavigation" aria-label="Rental modules">
   <NavLink href="/" Match="NavLinkMatch.All">Overview</NavLink>
-  <NavLink href="houses">Houses</NavLink>
-  <NavLink href="shops">Shops</NavLink>
-  <NavLink href="tenants">Tenants</NavLink>
-  <NavLink href="leases">Leases</NavLink>
-  <NavLink href="payments">Payments</NavLink>
-  <NavLink href="contracts">Contracts</NavLink>
-  <NavLink href="settings">Settings</NavLink>
+  <NavLink href="houses">Houses</NavLink><NavLink href="shops">Shops</NavLink>
+  <NavLink href="tenants">Tenants</NavLink><NavLink href="leases">Leases</NavLink>
+  <NavLink href="payments">Payments</NavLink><NavLink href="contracts">Contracts</NavLink>
   <NavLink href="reports">Reports</NavLink>
+  <NavLink href="comments"><AppIcon Name="comment" />Comments</NavLink>
  </nav>
- <div class="sidebarFoot">Blazor Server · SQL Server<br /><a href="/Account/Logout" data-enhance-nav="false">Sign out</a></div>
+ <div class="sidebarFoot sidebarAccount">
+  <nav class="utilityNavigation" aria-label="Account tools">
+   <NavLink href="notifications"><AppIcon Name="bell" />Notifications @if(Unread>0){<span class="unreadCount" aria-label="@($"{Unread} unread notifications")">@(Unread>99?"99+":Unread.ToString())</span>}</NavLink>
+   <NavLink href="settings"><AppIcon Name="settings" />Settings</NavLink>
+  </nav>
+  <NavLink href="profile" class="profileLink"><span class="avatar">@Initials</span><span><strong>@DisplayName</strong><small>Administrator · My profile</small></span></NavLink>
+  <a class="signOutLink" href="/Account/Logout" data-enhance-nav="false"><AppIcon Name="logout" />Sign out</a>
+ </div>
 </div>
 <main>@Body<footer>Chwaya Rental Manager · Houses and shops</footer></main>
 <div id="blazor-error-ui">Connection interrupted or an error occurred. <a href="" class="reload">Reload</a></div>
+@code{
+ string DisplayName="My profile";int Unread;
+ string Initials=>string.Concat(DisplayName.Split(' ',StringSplitOptions.RemoveEmptyEntries).Take(2).Select(x=>char.ToUpperInvariant(x[0])));
+ protected override async Task OnInitializedAsync(){Workspace.Changed+=Changed;Navigation.LocationChanged+=Navigated;await Load();}
+ async Task Load(){try{var summary=await Workspace.SummaryAsync();DisplayName=string.IsNullOrWhiteSpace(summary.Profile.DisplayName)?summary.Profile.Username:summary.Profile.DisplayName;Unread=summary.Unread;}catch{DisplayName="My profile";Unread=0;}StateHasChanged();}
+ void Changed()=>_=InvokeAsync(Load);
+ void Navigated(object? sender,Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs args)=>Changed();
+ public void Dispose(){Workspace.Changed-=Changed;Navigation.LocationChanged-=Navigated;}
+}

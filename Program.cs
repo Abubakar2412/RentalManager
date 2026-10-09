@@ -25,6 +25,8 @@ builder.Services.AddScoped<IContractRenderer,HtmlContractRenderer>();
 builder.Services.AddScoped<IRentalRepository,EfRentalRepository>();
 builder.Services.AddScoped<IAdminAccountService,AdminAccountService>();
 builder.Services.AddScoped<RentalService>();
+builder.Services.AddScoped<IWorkspaceRepository,EfWorkspaceRepository>();
+builder.Services.AddScoped<WorkspaceService>();
 builder.Services.AddRateLimiter(o=>o.AddPolicy("login",context=>RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString()??"local",_=>new FixedWindowRateLimiterOptions{PermitLimit=20,Window=TimeSpan.FromMinutes(1),QueueLimit=0})));
 var app=builder.Build();
 if(builder.Configuration.GetValue("Database:AutoMigrate",true)) {

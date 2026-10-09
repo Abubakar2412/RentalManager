@@ -11,6 +11,7 @@ public class RentalWorkflowTests {
   public RentalDbContext CreateDbContext()=>new(options);
   public Task<RentalDbContext> CreateDbContextAsync(CancellationToken cancellationToken=default)=>Task.FromResult(CreateDbContext());
  }
+ sealed class CurrentUser : ICurrentUser {public Task<string> GetRequiredNameAsync()=>Task.FromResult("rental-admin");}
  sealed class Auth : AuthenticationStateProvider {
   public override Task<AuthenticationState> GetAuthenticationStateAsync()=>Task.FromResult(new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(new[]{new Claim(ClaimTypes.Name,"test-admin")},"test"))));
  }
@@ -72,6 +73,23 @@ public class RentalWorkflowTests {
    var second=await service.ActivityAsync(new(Page:2,PageSize:2));Assert.DoesNotContain(second.Items,x=>paged.Items.Any(y=>y.Id==x.Id));
    Assert.Empty((await service.ActivityAsync(new(From:new(2020,1,1),To:new(2020,12,31)))).Items);
    Assert.DoesNotContain("Password",string.Join(" ",paged.Items.Select(x=>x.Actor)));
+   var workspace=new WorkspaceService(new EfWorkspaceRepository(factory),new CurrentUser());
+   await workspace.SaveProfileAsync(new(){DisplayName="Rental owner",Email="owner@example.com",Phone="0123456789"});
+   var summary=await workspace.SummaryAsync();Assert.Equal("Rental owner",summary.Profile.DisplayName);Assert.Equal("rental-admin",summary.Profile.Username);Assert.Equal("owner@example.com",summary.Profile.Email);
+   Assert.True(await accounts.ValidateAsync("rental-admin",(await accounts.VerifyAsync("rental-admin","UpdatedPassword2026!"))!.SecurityStamp));
+   await workspace.MarkReadAsync(null);Assert.Equal(0,(await workspace.SummaryAsync()).Unread);
+   await workspace.AddCommentAsync(new(){Subject="Maintenance follow-up",Message="<script>alert(1)</script> inspect the door"});
+   var comments=await workspace.CommentsAsync(new(Status:"open"));Assert.Single(comments.Items);Assert.Equal("rental-admin",comments.Items[0].Author);Assert.Contains("<script>",comments.Items[0].Message);
+   var notices=await workspace.NotificationsAsync(true,1);Assert.Single(notices.Items);Assert.Equal("/comments",notices.Items[0].Link);Assert.Equal(1,notices.Unread);
+   await workspace.MarkReadAsync(notices.Items[0].Id);Assert.Equal(0,(await workspace.SummaryAsync()).Unread);Assert.Single((await workspace.NotificationsAsync(false,1)).Items.Where(x=>x.Id==notices.Items[0].Id&&x.IsRead));
+   await workspace.ResolveCommentAsync(comments.Items[0].Id,true);Assert.Empty((await workspace.CommentsAsync(new(Status:"open"))).Items);Assert.Single((await workspace.CommentsAsync(new(Status:"resolved"))).Items);
+   await workspace.ResolveCommentAsync(comments.Items[0].Id,false);Assert.Single((await workspace.CommentsAsync(new(Search:"door",Status:"open"))).Items);
+   for(var i=0;i<26;i++)await workspace.AddCommentAsync(new(){Subject=$"Follow-up {i}",Message="Check rental maintenance"});
+   var firstComments=await workspace.CommentsAsync(new());var nextComments=await workspace.CommentsAsync(new(Page:2));Assert.Equal(27,firstComments.Total);Assert.Equal(25,firstComments.Items.Count);Assert.Equal(2,nextComments.Items.Count);Assert.DoesNotContain(nextComments.Items,x=>firstComments.Items.Any(y=>x.Id==y.Id));
+   var firstNotifications=await workspace.NotificationsAsync(true,1);var nextNotifications=await workspace.NotificationsAsync(true,2);Assert.Equal(26,firstNotifications.Unread);Assert.Equal(25,firstNotifications.Items.Count);Assert.Single(nextNotifications.Items);
+   await workspace.MarkReadAsync(null);Assert.Empty((await workspace.NotificationsAsync(true,1)).Items);
+   Assert.Single((await service.ActivityAsync(new(Action:"UpdateProfile"))).Items);
+   Assert.Equal(27,(await service.ActivityAsync(new(Action:"CreateComment"))).Total);
   } finally { await verify.Database.EnsureDeletedAsync(); }
  }
  [Fact]

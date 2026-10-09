@@ -177,3 +177,7 @@ Android/iOS feasibility and prerequisites are in [Docs/Mobile.md](Docs/Mobile.md
 ## Settings module
 
 See [Settings and administrator setup](Docs/Settings.md) for account controls, activity filters and reports.
+
+## Profile, comments and notifications
+
+See [User workspace modules](Docs/Profile-Comments-Notifications.md) for profile controls, internal comments, the notification inbox and the required additive database migration.

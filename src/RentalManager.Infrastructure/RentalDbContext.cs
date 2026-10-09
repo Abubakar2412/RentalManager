@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 namespace RentalManager.Data;
 public class RentalDbContext(DbContextOptions<RentalDbContext> options) : DbContext(options) {
+ public DbSet<RentalComment> Comments=>Set<RentalComment>();
+ public DbSet<AppNotification> Notifications=>Set<AppNotification>();
  public DbSet<Property> Properties=>Set<Property>();
  public DbSet<Tenant> Tenants=>Set<Tenant>();
  public DbSet<Lease> Leases=>Set<Lease>();
@@ -22,6 +24,8 @@ public class RentalDbContext(DbContextOptions<RentalDbContext> options) : DbCont
   b.Entity<Admin>().ToTable("Admins",t=>t.HasCheckConstraint("CK_Admins_Singleton","[Id]=1"));b.Entity<Admin>().Property(x=>x.Id).ValueGeneratedNever();b.Entity<Admin>().HasIndex(x=>x.Username).IsUnique();
   b.Entity<ContractSnapshot>().ToTable("Contracts");b.Entity<ContractSnapshot>().HasOne<Lease>().WithMany().HasForeignKey(x=>x.LeaseId).OnDelete(DeleteBehavior.Restrict);
   b.Entity<AuditEntry>().ToTable("Audit");
+  b.Entity<RentalComment>().ToTable("Comments");b.Entity<RentalComment>().HasIndex(x=>x.CreatedAt);
+  b.Entity<AppNotification>().ToTable("Notifications");b.Entity<AppNotification>().HasIndex(x=>new{x.IsRead,x.CreatedAt});
   foreach(var entity in b.Model.GetEntityTypes())foreach(var property in entity.GetProperties())
    if(property.ClrType==typeof(decimal))property.SetPrecision(18);
   foreach(var entity in b.Model.GetEntityTypes())foreach(var property in entity.GetProperties())

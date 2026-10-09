@@ -30,7 +30,7 @@ public class EfRentalRepository(IDbContextFactory<RentalDbContext> factory,ICont
   Audit=scope is RentalLoadScope.All or RentalLoadScope.Audit ? await db.Audit.AsNoTracking().OrderByDescending(x=>x.Id).Take(250).ToListAsync() : []
  };}
  static void Validate(object entity){var errors=new List<ValidationResult>();if(!Validator.TryValidateObject(entity,new ValidationContext(entity),errors,true))throw new InvalidOperationException(string.Join(" ",errors.Select(x=>x.ErrorMessage)));}
- static void AddAudit(RentalDbContext db,string actor,string action,string entity,int id)=>db.Audit.Add(new(){At=DateTimeOffset.UtcNow,Actor=actor,Action=action,Entity=entity,EntityId=id});
+ static void AddAudit(RentalDbContext db,string actor,string action,string entity,int id){db.Audit.Add(new(){At=DateTimeOffset.UtcNow,Actor=actor,Action=action,Entity=entity,EntityId=id});db.Notifications.Add(new(){Title=$"{entity} {action.ToLowerInvariant()}",Message=$"{actor}: {entity} #{id} — {action}.",Link=entity switch{"Property"=>"/houses","Tenant"=>"/tenants","Lease"=>"/leases","Payment"=>"/payments","Contract"=>"/contracts",_=>"/settings?tab=activity"},CreatedAt=DateTimeOffset.UtcNow});}
  async Task SaveAsyncCore(IEntity entity,string actor){
   Validate(entity);
   await using var db=await factory.CreateDbContextAsync();

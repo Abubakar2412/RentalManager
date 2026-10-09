@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using RentalManager.Data;
 namespace RentalManager.Services;
 public sealed class AdminAccountService(IDbContextFactory<RentalDbContext> factory):IAdminAccountService {
- static void Audit(RentalDbContext db,string actor,string action)=>db.Audit.Add(new(){At=DateTimeOffset.UtcNow,Actor=actor,Action=action,Entity="Admin",EntityId=1});
+ static void Audit(RentalDbContext db,string actor,string action){db.Audit.Add(new(){At=DateTimeOffset.UtcNow,Actor=actor,Action=action,Entity="Admin",EntityId=1});db.Notifications.Add(new(){Title=action switch{"SetupAdmin"=>"Administrator account created","SignIn"=>"Administrator signed in","SignOut"=>"Administrator signed out","RenameAdmin"=>"Administrator username changed","ChangePassword"=>"Administrator password changed",_=>"Administrator activity"},Message=$"{actor}: account activity recorded.",Link="/settings?tab=activity",CreatedAt=DateTimeOffset.UtcNow});}
  public async Task RecordSignOutAsync(string username){await using var db=await factory.CreateDbContextAsync();Audit(db,username,"SignOut");await db.SaveChangesAsync();}
  public async Task<bool> RenameAsync(string username,string password,string newUsername){
   newUsername=newUsername.Trim();if(newUsername.Length<3||newUsername.Length>80)throw new InvalidOperationException("Username must be 3–80 characters.");

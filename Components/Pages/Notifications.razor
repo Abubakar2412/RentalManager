@@ -1,0 +1,21 @@
+@page "/notifications"
+@attribute [Authorize]
+@inject WorkspaceService Workspace
+<PageTitle>Notifications · Chwaya Rental Manager</PageTitle>
+<header><div><h1>Notifications</h1><p>Rental changes, account activity and new comments.</p></div></header>
+@if(Error.Length>0){<p class="error" role="alert">@Error</p>}
+<section class="panel settingsPanel"><div class="settingsActions"><button @onclick="ShowAll" disabled="@Busy">All</button><button @onclick="ShowUnread" disabled="@Busy">Unread</button><button @onclick="MarkAll" disabled="@(Busy||Result is null||Result.Unread==0)">Mark all as read</button><button @onclick="Refresh" disabled="@Busy">Refresh</button></div>
+@if(Result is not null){<p>@Result.Unread unread · @(UnreadOnly?"Unread notifications":"All notifications") · Page @Result.Page</p>@foreach(var item in Result.Items){<article class="notificationCard @(item.IsRead?"":"isUnread")" @key="item.Id"><span class="notificationIcon"><AppIcon Name="bell" /></span><div><h3>@item.Title</h3><p>@item.Message</p><small>@item.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm") UTC</small><div class="settingsActions"><a href="@item.Link">View details</a>@if(!item.IsRead){<button @onclick="()=>Read(item.Id)" disabled="@Busy">Mark read</button>}else{<span class="badge gray">Read</span>}</div></div></article>}
+@if(Result.Items.Count==0){<div class="empty"><AppIcon Name="bell" /><p>@(UnreadOnly?"You’re all caught up.":"No notifications yet. New activity will appear here.")</p></div>}
+<div class="settingsActions"><button disabled="@(Busy||Result.Page<=1)" @onclick="Previous">Previous</button><button disabled="@(Busy||Result.Page*25>=Result.Total)" @onclick="Next">Next</button></div>
+}else if(Busy){<p role="status">Loading notifications…</p>}
+</section>
+@code{
+ NotificationPage? Result;bool UnreadOnly,Busy;int Page=1;string Error="";
+ protected override async Task OnInitializedAsync()=>await Load();
+ async Task Load(){if(Busy)return;Busy=true;Error="";try{Result=await Workspace.NotificationsAsync(UnreadOnly,Page);if(Result.Items.Count==0&&Page>1){Page=Math.Max(1,(Result.Total+24)/25);Result=await Workspace.NotificationsAsync(UnreadOnly,Page);}}catch(Exception e){Error=RentalService.Error(e);}finally{Busy=false;}}
+ Task ShowAll(){UnreadOnly=false;Page=1;return Load();}Task ShowUnread(){UnreadOnly=true;Page=1;return Load();}Task Refresh()=>Load();
+ async Task Read(int id){if(Busy)return;try{await Workspace.MarkReadAsync(id);await Load();}catch(Exception e){Error=RentalService.Error(e);}}
+ async Task MarkAll(){if(Busy)return;try{await Workspace.MarkReadAsync(null);Page=1;await Load();}catch(Exception e){Error=RentalService.Error(e);}}
+ Task Previous(){Page--;return Load();}Task Next(){Page++;return Load();}
+}
