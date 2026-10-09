@@ -27,6 +27,7 @@ const { chromium } = require('playwright');
     await page.getByRole('button',{name:'Mark resolved',exact:true}).click();await page.locator('.commentCard .badge').filter({hasText:'Resolved'}).waitFor();
     await page.getByRole('button',{name:'Reopen',exact:true}).click();await page.locator('.commentCard .badge').filter({hasText:'Open'}).waitFor();
     await page.screenshot({path:'/tmp/rental-comments-desktop.png',fullPage:true});
+    await page.evaluate(()=>window.scrollTo(0,0));
     const desktop=await page.evaluate(()=>{const header=document.querySelector('.appHeader').getBoundingClientRect();const main=document.querySelector('main').getBoundingClientRect();const menus=[...document.querySelectorAll('.mainNavigation')].map(x=>x.getBoundingClientRect());return{top:header.top,bottom:header.bottom,mainTop:main.top,contained:menus.every(x=>x.top>=header.top&&x.bottom<=header.bottom)};});
     assert.equal(desktop.top,0);assert(desktop.bottom<=desktop.mainTop);assert(desktop.contained,'Rental modules belong in the top header');
     assert(await page.evaluate(()=>Math.abs(document.querySelector('.accountDock').getBoundingClientRect().bottom-innerHeight)<1),'Account controls remain at the bottom');
