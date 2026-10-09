@@ -173,3 +173,7 @@ dotnet ef database update --project src/RentalManager.Infrastructure --startup-p
 ```
 
 Android/iOS feasibility and prerequisites are in [Docs/Mobile.md](Docs/Mobile.md). This change does not include a native mobile binary.
+
+## Settings module
+
+See [Settings and administrator setup](Docs/Settings.md) for account controls, activity filters and reports.

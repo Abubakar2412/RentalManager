@@ -4,6 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using RentalManager.Data;
 namespace RentalManager.Services;
 public class EfRentalRepository(IDbContextFactory<RentalDbContext> factory,IContractRenderer renderer) : IRentalRepository {
+ public Task<ActivityLogPage> ActivityAsync(ActivityLogFilter filter,string actor)=>Guard(async()=>{
+  filter.Validate();await using var db=await factory.CreateDbContextAsync();var query=db.Audit.AsNoTracking().AsQueryable();
+  if(!string.IsNullOrWhiteSpace(filter.Search)){var term=filter.Search.Trim();query=query.Where(x=>x.Actor.Contains(term)||x.Entity.Contains(term));}
+  if(!string.IsNullOrWhiteSpace(filter.Action))query=query.Where(x=>x.Action==filter.Action);
+  if(filter.From is {} from){var start=new DateTimeOffset(from.ToDateTime(TimeOnly.MinValue),TimeSpan.Zero);query=query.Where(x=>x.At>=start);}
+  if(filter.To is {} to){var end=new DateTimeOffset(to.ToDateTime(TimeOnly.MaxValue),TimeSpan.Zero);query=query.Where(x=>x.At<=end);}
+  var total=await query.CountAsync();var items=await query.OrderByDescending(x=>x.At).ThenByDescending(x=>x.Id).Skip((filter.Page-1)*filter.PageSize).Take(filter.PageSize).ToListAsync();return new ActivityLogPage(items,total,filter.Page,filter.PageSize);
+ });
  public Task<RentalData> LoadAsync(string actor,RentalLoadScope scope)=>Guard(()=>LoadAsyncCore(actor,scope));
  public Task SaveAsync(IEntity entity,string actor)=>Guard(()=>SaveAsyncCore(entity,actor));
  public Task SaveRentInstalmentAsync(Payment payment,int months,string actor)=>Guard(()=>SaveRentInstalmentAsyncCore(payment,months,actor));

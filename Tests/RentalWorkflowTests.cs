@@ -50,6 +50,28 @@ public class RentalWorkflowTests {
    Assert.Equal(2,data.Payments.Count);Assert.Equal(2,data.Contracts.Count);
    Assert.Equal(1300000m,data.Payments.Sum(x=>x.Amount));
    Assert.Contains("000123",CsvExport.Records(data.Tenants));
+   var accounts=new AdminAccountService(factory);
+   Assert.True(await accounts.CreateAsync("administrator","InitialPassword2026!"));
+   Assert.False(await accounts.CreateAsync("second-admin","InitialPassword2026!"));
+   var session=await accounts.VerifyAsync("administrator","InitialPassword2026!");Assert.NotNull(session);
+   Assert.False(await accounts.RenameAsync("administrator","wrong-password","rental-admin"));
+   Assert.True(await accounts.RenameAsync("administrator","InitialPassword2026!","rental-admin"));
+   Assert.False(await accounts.ValidateAsync("administrator",session.SecurityStamp));
+   Assert.Null(await accounts.VerifyAsync("administrator","InitialPassword2026!"));
+   Assert.NotNull(await accounts.VerifyAsync("rental-admin","InitialPassword2026!"));
+   var renamed=await accounts.VerifyAsync("rental-admin","InitialPassword2026!");
+   Assert.False(await accounts.ChangePasswordAsync("rental-admin","wrong-password","UpdatedPassword2026!"));
+   Assert.True(await accounts.ChangePasswordAsync("rental-admin","InitialPassword2026!","UpdatedPassword2026!"));
+   Assert.False(await accounts.ValidateAsync("rental-admin",renamed!.SecurityStamp));
+   Assert.NotNull(await accounts.VerifyAsync("rental-admin","UpdatedPassword2026!"));
+   await accounts.RecordSignOutAsync("rental-admin");
+   var activity=await service.ActivityAsync(new(Action:"RenameAdmin",PageSize:1));Assert.Equal(1,activity.Total);Assert.Single(activity.Items);Assert.Equal("administrator",activity.Items[0].Actor);
+   Assert.Single((await service.ActivityAsync(new(Action:"ChangePassword"))).Items);
+   Assert.Empty((await service.ActivityAsync(new(Search:"no-such-actor"))).Items);
+   var paged=await service.ActivityAsync(new(PageSize:2));Assert.Equal(2,paged.Items.Count);Assert.True(paged.Total>2);
+   var second=await service.ActivityAsync(new(Page:2,PageSize:2));Assert.DoesNotContain(second.Items,x=>paged.Items.Any(y=>y.Id==x.Id));
+   Assert.Empty((await service.ActivityAsync(new(From:new(2020,1,1),To:new(2020,12,31)))).Items);
+   Assert.DoesNotContain("Password",string.Join(" ",paged.Items.Select(x=>x.Actor)));
   } finally { await verify.Database.EnsureDeletedAsync(); }
  }
  [Fact]

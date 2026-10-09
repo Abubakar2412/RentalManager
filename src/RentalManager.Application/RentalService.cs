@@ -1,5 +1,6 @@
 namespace RentalManager.Services;
 public sealed class RentalService(IRentalRepository repository,ICurrentUser user) {
+ public async Task<ActivityLogPage> ActivityAsync(ActivityLogFilter filter){filter.Validate();return await repository.ActivityAsync(filter,await user.GetRequiredNameAsync());}
  public async Task<RentalData> LoadAsync(RentalLoadScope scope=RentalLoadScope.All)=>await repository.LoadAsync(await user.GetRequiredNameAsync(),scope);
  public async Task SaveAsync(IEntity entity)=>await repository.SaveAsync(entity,await user.GetRequiredNameAsync());
  public async Task SaveRentInstalmentAsync(Payment payment,int months)=>await repository.SaveRentInstalmentAsync(payment,months,await user.GetRequiredNameAsync());
