@@ -2,6 +2,7 @@
 @page "/client/contracts"
 @page "/client/notifications"
 @layout ClientLayout
+@implements IDisposable
 @attribute [Authorize(Policy="Client")]
 @inject ClientPortalService Portal
 @inject NavigationManager Navigation
@@ -29,8 +30,23 @@
  ClientDashboard? Data;RenewalDraft? Draft;string Error="",Message="";bool Busy;
  string Section=>Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0].Trim('/').Split('/').Last();
  string Title=>Section switch{"contracts"=>"My contracts","notifications"=>"My notifications",_=>"My rental"};
- protected override async Task OnParametersSetAsync()=>await Load();
- async Task Load(){try{Data=await Portal.LoadAsync();}catch(Exception e){Error=RentalService.Error(e);}}
+ bool Disposed;int LoadVersion;
+ protected override async Task OnInitializedAsync(){Navigation.LocationChanged+=LocationChanged;await Load();}
+ void LocationChanged(object? sender,Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs args){
+  _=InvokeAsync(async()=>{
+   if(Disposed)return;
+   Draft=null;Message="";Error="";Data=null;
+   StateHasChanged();
+   await Load();
+   if(!Disposed)StateHasChanged();
+  });
+ }
+ async Task Load(){
+  var version=++LoadVersion;Error="";
+  try{var data=await Portal.LoadAsync();if(!Disposed&&version==LoadVersion)Data=data;}
+  catch(Exception e){if(!Disposed&&version==LoadVersion)Error=RentalService.Error(e);}
+ }
+ public void Dispose(){Disposed=true;LoadVersion++;Navigation.LocationChanged-=LocationChanged;}
  void Decide(ClientLease lease){Error="";Message="";var existing=Data!.Requests.FirstOrDefault(x=>x.LeaseId==lease.Id);Draft=new(){LeaseId=lease.Id,Months=existing?.Months>0?existing.Months:lease.RenewalMonths,ContinueRent=existing?.ContinueRent??true,Message=existing?.Message??""};}
  async Task Submit(){if(Draft is null||Busy)return;Busy=true;Error="";Message="";try{await Portal.SubmitAsync(Draft);Draft=null;await Load();Message="Your rental decision was sent to the landlord.";}catch(Exception e){Error=RentalService.Error(e);}finally{Busy=false;}}
 }
