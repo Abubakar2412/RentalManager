@@ -22,10 +22,35 @@ namespace RentalManager.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("RentalManager.RentalComment", b => {
+                b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("int");
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                b.Property<string>("Subject").IsRequired().HasMaxLength(120).HasColumnType("nvarchar(120)");
+                b.Property<string>("Message").IsRequired().HasMaxLength(2000).HasColumnType("nvarchar(2000)");
+                b.Property<string>("Author").IsRequired().HasMaxLength(80).HasColumnType("nvarchar(80)");
+                b.Property<DateTimeOffset>("CreatedAt").HasColumnType("datetimeoffset");
+                b.Property<bool>("Resolved").HasColumnType("bit");
+                b.HasKey("Id");b.HasIndex("CreatedAt");b.ToTable("Comments",(string)null);
+            });
+            modelBuilder.Entity("RentalManager.AppNotification", b => {
+                b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("int");
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                b.Property<string>("Title").IsRequired().HasMaxLength(150).HasColumnType("nvarchar(150)");
+                b.Property<string>("Message").IsRequired().HasMaxLength(250).HasColumnType("nvarchar(250)");
+                b.Property<string>("Link").IsRequired().HasMaxLength(120).HasColumnType("nvarchar(120)");
+                b.Property<DateTimeOffset>("CreatedAt").HasColumnType("datetimeoffset");
+                b.Property<bool>("IsRead").HasColumnType("bit");
+                b.HasKey("Id");b.HasIndex("IsRead","CreatedAt");b.ToTable("Notifications",(string)null);
+            });
+
             modelBuilder.Entity("RentalManager.Admin", b =>
                 {
                     b.Property<int>("Id")
                         .HasColumnType("int");
+
+                    b.Property<string>("DisplayName").IsRequired().HasMaxLength(150).HasColumnType("nvarchar(150)");
+                    b.Property<string>("Email").HasMaxLength(150).HasColumnType("nvarchar(150)");
+                    b.Property<string>("Phone").IsRequired().HasMaxLength(40).HasColumnType("nvarchar(40)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()

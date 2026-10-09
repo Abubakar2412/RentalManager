@@ -1,0 +1,18 @@
+@page "/profile"
+@attribute [Authorize]
+@inject WorkspaceService Workspace
+<PageTitle>My profile · Chwaya Rental Manager</PageTitle>
+<header><div><h1>My profile</h1><p>Your contact details and administrator account.</p></div></header>
+@if(Error.Length>0){<p class="error" role="alert">@Error</p>}
+@if(Message.Length>0){<p class="notice" role="status">@Message</p>}
+@if(UserDetails is not null){
+<section class="panel settingsPanel profileHeader"><span class="avatar avatarLarge">@Initials</span><div><h2>@(string.IsNullOrWhiteSpace(UserDetails.DisplayName)?UserDetails.Username:UserDetails.DisplayName)</h2><p>@@@UserDetails.Username · Administrator</p></div></section>
+<section class="panel settingsPanel"><h2>Personal information</h2><EditForm Model="Edit" OnValidSubmit="Save" FormName="user-profile"><DataAnnotationsValidator /><ValidationSummary /><div class="formGrid"><label>Full name<InputText @bind-Value="Edit.DisplayName" maxlength="150" autocomplete="name" /></label><label>Email<InputText @bind-Value="Edit.Email" type="email" maxlength="150" autocomplete="email" /></label><label>Phone<InputText @bind-Value="Edit.Phone" type="tel" maxlength="40" autocomplete="tel" /></label></div><div class="settingsActions"><button class="primary" type="submit" disabled="@Busy">@(Busy?"Saving…":"Save profile")</button></div></EditForm></section>
+<section class="panel settingsPanel"><h2>Account security</h2><p>Your profile does not change your login credentials or permissions.</p><div class="settingsActions"><a href="/Account/Username" data-enhance-nav="false">Change username</a><a href="/Account/Password" data-enhance-nav="false">Change password</a><a href="/settings?tab=activity">View activity</a></div></section>
+}else if(Error.Length==0){<p role="status">Loading your profile…</p>}
+@code{
+ UserProfile? UserDetails;ProfileEdit Edit=new();string Error="",Message="";bool Busy;
+ string Initials=>string.Concat((UserDetails?.DisplayName.Length>0?UserDetails.DisplayName:UserDetails?.Username??"User").Split(' ',StringSplitOptions.RemoveEmptyEntries).Take(2).Select(x=>char.ToUpperInvariant(x[0])));
+ protected override async Task OnInitializedAsync(){try{UserDetails=(await Workspace.SummaryAsync()).Profile;Edit=new(){DisplayName=UserDetails.DisplayName.Length==0?UserDetails.Username:UserDetails.DisplayName,Email=UserDetails.Email,Phone=UserDetails.Phone};}catch(Exception e){Error=RentalService.Error(e);}}
+ async Task Save(){if(Busy)return;Busy=true;Error="";Message="";try{await Workspace.SaveProfileAsync(Edit);UserDetails=(await Workspace.SummaryAsync()).Profile;Message="Profile saved.";}catch(Exception e){Error=RentalService.Error(e);}finally{Busy=false;}}
+}

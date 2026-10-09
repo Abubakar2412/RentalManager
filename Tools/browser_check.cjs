@@ -1,0 +1,41 @@
+const assert = require('node:assert/strict');
+const { chromium } = require('playwright');
+(async () => {
+  const browser = await chromium.launch({headless:true});
+  const page = await browser.newPage({viewport:{width:1440,height:1000}});
+  const errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  const base=process.env.RENTAL_UI_URL||'http://127.0.0.1:5080';
+  const go=path=>page.goto(base+path,{waitUntil:'networkidle'});
+  const visible=async selector=>assert(await page.locator(selector).first().isVisible(),`${selector} should be visible`);
+  try {
+    await go('/profile');assert(page.url().includes('/Account/Login')||page.url().includes('/Account/Setup'));
+    await go('/Account/Setup');
+    await page.locator('#Username').fill('browser-admin');
+    await page.locator('#Password').fill('BrowserTest_2026!Only');
+    await page.locator('#ConfirmPassword').fill('BrowserTest_2026!Only');
+    await Promise.all([page.waitForURL('**/Account/Login'),page.getByRole('button',{name:'Create administrator',exact:true}).click()]);
+    await page.locator('#Username').fill('browser-admin');await page.locator('#Password').fill('BrowserTest_2026!Only');
+    await Promise.all([page.waitForURL(base+'/'),page.getByRole('button',{name:'Sign in',exact:true}).click()]);
+    await go('/profile');await visible('.profileHeader');
+    await page.getByLabel('Full name',{exact:true}).fill('Browser Owner');await page.getByLabel('Email',{exact:true}).fill('owner@example.com');await page.getByLabel('Phone',{exact:true}).fill('0123456789');
+    await page.getByRole('button',{name:'Save profile',exact:true}).click();await page.getByText('Profile saved.',{exact:true}).waitFor();
+    assert.equal(await page.locator('.profileLink strong').textContent(),'Browser Owner');
+    await go('/comments');await page.getByLabel('Subject',{exact:true}).fill('Check the rental door');await page.getByLabel('Comment',{exact:true}).fill('<script>window.commentExecuted=true</script>\nSchedule maintenance');
+    await page.getByRole('button',{name:'Post comment',exact:true}).click();await page.getByText('Comment posted.',{exact:true}).waitFor();
+    assert((await page.locator('.commentBody').textContent()).includes('<script>'));assert.equal(await page.evaluate(()=>window.commentExecuted),undefined);assert.equal(await page.locator('.commentCard script').count(),0);
+    await page.getByRole('button',{name:'Mark resolved',exact:true}).click();await page.locator('.commentCard .badge').filter({hasText:'Resolved'}).waitFor();
+    await page.getByRole('button',{name:'Reopen',exact:true}).click();await page.locator('.commentCard .badge').filter({hasText:'Open'}).waitFor();
+    await page.screenshot({path:'/tmp/rental-comments-desktop.png',fullPage:true});
+    const desktop=await page.evaluate(()=>{const footer=document.querySelector('.sidebarAccount').getBoundingClientRect();const modules=document.querySelector('.mainNavigation').getBoundingClientRect();const sidebar=document.querySelector('.sidebar').getBoundingClientRect();return{footerBottom:footer.bottom,sidebarBottom:sidebar.bottom,footerTop:footer.top,modulesBottom:modules.bottom};});
+    assert(desktop.footerBottom<=desktop.sidebarBottom&&desktop.sidebarBottom-desktop.footerBottom<40);assert(desktop.modulesBottom<=desktop.footerTop+1);
+    assert.equal(await page.locator('.utilityNavigation a[href="settings"] svg').count(),1);assert.equal(await page.locator('.utilityNavigation a[href="notifications"] svg').count(),1);
+    await go('/notifications');await visible('.notificationCard');await page.getByRole('button',{name:'Mark all as read',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.unreadCount'));
+    await page.getByRole('button',{name:'Unread',exact:true}).click();await page.getByText('You’re all caught up.',{exact:true}).waitFor();
+    await go('/profile');assert.equal(await page.getByLabel('Full name',{exact:true}).inputValue(),'Browser Owner');
+    await page.setViewportSize({width:390,height:844});await go('/comments');await visible('.utilityNavigation');await visible('.profileLink');
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),true,'Mobile view must not overflow horizontally');
+    await page.screenshot({path:'/tmp/rental-comments-mobile.png',fullPage:true});
+    assert.deepEqual(errors,[]);console.log('PASS: authenticated profile persistence, safe comment rendering/status, notification read state, desktop bottom navigation and mobile layout.');
+  }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exit(1);});
