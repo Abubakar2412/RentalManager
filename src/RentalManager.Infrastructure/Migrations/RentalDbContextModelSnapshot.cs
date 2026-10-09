@@ -43,6 +43,25 @@ namespace RentalManager.Migrations
                 b.HasKey("Id");b.HasIndex("IsRead","CreatedAt");b.ToTable("Notifications",(string)null);
             });
 
+            modelBuilder.Entity("RentalManager.ClientAccount", b => {
+                b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("int");SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                b.Property<int>("TenantId").HasColumnType("int");
+                b.Property<string>("Username").IsRequired().HasMaxLength(80).HasColumnType("nvarchar(80)");
+                b.Property<string>("PasswordHash").IsRequired().HasMaxLength(1000).HasColumnType("nvarchar(1000)");
+                b.Property<string>("SecurityStamp").IsRequired().HasMaxLength(32).HasColumnType("nvarchar(32)");
+                b.Property<bool>("Enabled").HasColumnType("bit");b.Property<bool>("MustChangePassword").HasColumnType("bit");
+                b.HasKey("Id");b.HasIndex("Username").IsUnique();b.HasIndex("TenantId").IsUnique();b.ToTable("ClientAccounts",(string)null);
+            });
+            modelBuilder.Entity("RentalManager.RenewalIntent", b => {
+                b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("int");SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                b.Property<int>("LeaseId").HasColumnType("int");b.Property<int>("TenantId").HasColumnType("int");
+                b.Property<bool>("ContinueRent").HasColumnType("bit");b.Property<int>("Months").HasColumnType("int");
+                b.Property<string>("Message").IsRequired().HasMaxLength(2000).HasColumnType("nvarchar(2000)");
+                b.Property<DateTimeOffset>("SubmittedAt").HasColumnType("datetimeoffset");b.Property<bool>("Reviewed").HasColumnType("bit");
+                b.Property<string>("Response").IsRequired().HasMaxLength(1000).HasColumnType("nvarchar(1000)");
+                b.HasKey("Id");b.HasIndex("LeaseId").IsUnique();b.HasIndex("TenantId");b.ToTable("RenewalIntents",(string)null);
+            });
+
             modelBuilder.Entity("RentalManager.Admin", b =>
                 {
                     b.Property<int>("Id")
@@ -525,6 +544,13 @@ namespace RentalManager.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
+            modelBuilder.Entity("RentalManager.ClientAccount", b => {
+                b.HasOne("RentalManager.Tenant",null).WithMany().HasForeignKey("TenantId").OnDelete(DeleteBehavior.Restrict).IsRequired();
+            });
+            modelBuilder.Entity("RentalManager.RenewalIntent", b => {
+                b.HasOne("RentalManager.Lease",null).WithMany().HasForeignKey("LeaseId").OnDelete(DeleteBehavior.Restrict).IsRequired();
+                b.HasOne("RentalManager.Tenant",null).WithMany().HasForeignKey("TenantId").OnDelete(DeleteBehavior.Restrict).IsRequired();
+            });
 #pragma warning restore 612, 618
         }
     }

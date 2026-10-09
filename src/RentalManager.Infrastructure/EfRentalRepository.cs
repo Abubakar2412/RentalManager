@@ -47,7 +47,7 @@ public class EfRentalRepository(IDbContextFactory<RentalDbContext> factory,ICont
    if(l.Status=="Active"&&!property.Available)throw new InvalidOperationException("The property is unavailable for leasing.");
    if(l.Status=="Active"&&await db.Leases.AnyAsync(x=>x.Id!=l.Id&&x.PropertyId==l.PropertyId&&x.Status=="Active"&&x.StartDate<=l.EndDate&&x.EndDate>=l.StartDate))throw new InvalidOperationException("This house or shop already has an overlapping active lease.");
    var old=await db.Leases.AsNoTracking().SingleOrDefaultAsync(x=>x.Id==l.Id);
-   if(old!=null&&(old.PropertyId!=l.PropertyId||old.TenantId!=l.TenantId)&&await db.Payments.AnyAsync(x=>x.LeaseId==l.Id))throw new InvalidOperationException("A lease with payments cannot be reassigned. Create a new lease.");
+   if(old!=null&&(old.PropertyId!=l.PropertyId||old.TenantId!=l.TenantId)&&(await db.Payments.AnyAsync(x=>x.LeaseId==l.Id)||await db.Contracts.AnyAsync(x=>x.LeaseId==l.Id)||await db.RenewalIntents.AnyAsync(x=>x.LeaseId==l.Id)))throw new InvalidOperationException("A lease with payments, contracts or renewal requests cannot be reassigned. Create a new lease.");
   }
   if(entity is Payment payment){
    if(payment.PaidOn==default||payment.Period==default)throw new InvalidOperationException("Payment date and rental period are required.");

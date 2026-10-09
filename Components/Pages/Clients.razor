@@ -1,0 +1,26 @@
+@page "/clients"
+@attribute [Authorize]
+@inject ClientAdminService ClientsService
+@inject RentalService Rental
+<PageTitle>Client accounts · Chwaya House</PageTitle>
+<header><div><h1>Client portal administration</h1><p>Manage tenant logins and review their rental decisions.</p></div><a href="/Client/Login" target="_blank" rel="noopener">Client sign-in page</a></header>
+<nav class="settingsTabs"><a href="/clients">Client accounts</a><a href="/clients?tab=renewals">Renewal requests</a></nav>
+@if(Error.Length>0){<p class="error" role="alert">@Error</p>}
+@if(Message.Length>0){<p class="notice" role="status">@Message</p>}
+@if(Tab=="renewals"){
+<section class="panel settingsPanel"><h2>Client rental decisions</h2><p>Reviewing a request sends your response to the client portal. To renew a tenancy, agree the terms, update or create the lease, and generate the appropriate contract separately.</p>@foreach(var request in Requests){<article class="commentCard"><div class="commentHeading"><h3>@request.Tenant · @request.Property</h3><span class="badge @(request.Reviewed?"gray":"")">@(request.Reviewed?"Reviewed":"Pending")</span></div><p>@(request.ContinueRent?$"Would like to continue for {request.Months} month(s)":"Plans to leave at the end of the term") · Lease #@request.LeaseId</p><p class="commentBody">@request.Message</p><small>@request.SubmittedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm") UTC</small><label>Response to client<textarea maxlength="1000" value="@Responses[request.Id]" @onchange="e=>Responses[request.Id]=e.Value?.ToString()??string.Empty"></textarea></label><button disabled="@Busy" @onclick="()=>Review(request.Id)">Send response and mark reviewed</button></article>}@if(Requests.Count==0){<p class="empty">No renewal decisions have been submitted.</p>}</section>
+}else{
+<section class="panel settingsPanel"><h2>Create a client login</h2><p>Select an existing tenant. Share the username and temporary password directly with that client. They must change the password on first sign-in.</p><EditForm Model="Input" OnValidSubmit="Create" FormName="client-account"><DataAnnotationsValidator /><ValidationSummary /><div class="formGrid"><label>Tenant<InputSelect @bind-Value="Input.TenantId"><option value="0">Select tenant…</option>@foreach(var tenant in Tenants){<option value="@tenant.Id">@tenant.FullName</option>}</InputSelect></label><label>Client username<InputText @bind-Value="Input.Username" maxlength="80" autocomplete="off" /></label><label>Temporary password<InputText @bind-Value="Input.TemporaryPassword" type="password" minlength="12" maxlength="200" autocomplete="new-password" /></label></div><div class="settingsActions"><button type="submit" class="primary" disabled="@Busy">Create client account</button></div></EditForm></section>
+<section class="panel settingsPanel"><h2>Existing client accounts</h2><label>Temporary password for reset<input type="password" @bind="ResetPassword" minlength="12" maxlength="200" autocomplete="new-password" /></label><div class="tableWrap"><table><thead><tr><th>Tenant</th><th>Username</th><th>Status</th><th>Actions</th></tr></thead><tbody>@foreach(var account in Accounts){<tr><td>@account.TenantName</td><td>@account.Username</td><td>@(account.Enabled?"Enabled":"Disabled") @(account.MustChangePassword?"· Password change required":"")</td><td><button disabled="@Busy" @onclick="()=>Enable(account)">@(account.Enabled?"Disable":"Enable")</button><button disabled="@Busy" @onclick="()=>Reset(account.Id)">Reset password</button></td></tr>}</tbody></table></div></section>
+}
+@code{
+ [SupplyParameterFromQuery(Name="tab")]public string? Tab{get;set;}
+ ClientProvision Input=new();IReadOnlyList<ClientAccountInfo> Accounts=[];IReadOnlyList<RenewalInfo> Requests=[];List<Tenant> Tenants=[];Dictionary<int,string> Responses=[];string Error="",Message="",ResetPassword="";bool Busy;
+ protected override async Task OnParametersSetAsync()=>await Load();
+ async Task Load(){try{if(Tab=="renewals"){Requests=await ClientsService.RequestsAsync();Responses=Requests.ToDictionary(x=>x.Id,x=>x.Response);}else{Accounts=await ClientsService.AccountsAsync();Tenants=(await Rental.LoadAsync(RentalLoadScope.Core)).Tenants;}}catch(Exception e){Error=RentalService.Error(e);}}
+ async Task Run(Func<Task> work,string success){if(Busy)return;Busy=true;Error="";Message="";try{await work();await Load();Message=success;}catch(Exception e){Error=RentalService.Error(e);}finally{Busy=false;}}
+ Task Create()=>Run(async()=>{await ClientsService.CreateAsync(Input);Input=new();},"Client account created. The client must change the temporary password when signing in.");
+ Task Enable(ClientAccountInfo account)=>Run(()=>ClientsService.EnableAsync(account.Id,!account.Enabled),"Client account status updated. Previous sessions were invalidated.");
+ Task Reset(int id)=>Run(async()=>{await ClientsService.ResetAsync(id,ResetPassword);ResetPassword="";},"Password reset. Share the temporary password directly with the client.");
+ Task Review(int id)=>Run(()=>ClientsService.ReviewAsync(id,Responses[id]),"Response sent to the client portal. Lease dates were not changed.");
+}
