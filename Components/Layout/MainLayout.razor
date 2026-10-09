@@ -2,7 +2,7 @@
 @implements IDisposable
 @inject WorkspaceService Workspace
 @inject NavigationManager Navigation
-<div class="sidebar">
+<header class="sidebar appHeader">
  <div class="brand">CH<span>Chwaya House<small>Houses &amp; shops</small></span></div>
  <nav class="mainNavigation" aria-label="Rental modules">
   <NavLink href="/" Match="NavLinkMatch.All">Overview</NavLink>
@@ -12,15 +12,15 @@
   <NavLink href="reports">Reports</NavLink>
   <NavLink href="comments"><AppIcon Name="comment" />Comments</NavLink>
  </nav>
- <div class="sidebarFoot sidebarAccount">
+</header>
+<aside class="sidebarFoot sidebarAccount accountDock" aria-label="Account controls">
   <nav class="utilityNavigation" aria-label="Account tools">
    <NavLink href="notifications"><AppIcon Name="bell" />Notifications @if(Unread>0){<span class="unreadCount" aria-label="@($"{Unread} unread notifications")">@(Unread>99?"99+":Unread.ToString())</span>}</NavLink>
    <NavLink href="settings"><AppIcon Name="settings" />Settings</NavLink>
   </nav>
   <NavLink href="profile" class="profileLink"><span class="avatar">@Initials</span><span><strong>@DisplayName</strong><small>Administrator · My profile</small></span></NavLink>
   <a class="signOutLink" href="/Account/Logout" data-enhance-nav="false"><AppIcon Name="logout" />Sign out</a>
- </div>
-</div>
+</aside>
 <main>@Body<footer>Chwaya Rental Manager · Houses and shops</footer></main>
 <div id="blazor-error-ui">Connection interrupted or an error occurred. <a href="" class="reload">Reload</a></div>
 @code{
