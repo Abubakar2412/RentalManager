@@ -1,0 +1,29 @@
+@inject RentalService Service
+@inject IJSRuntime JS
+<section class="panel">
+<h2>Activity log</h2><p>Search all saved activity. Dates are UTC; reports contain the displayed page.</p>
+<form @onsubmit="Apply" @onsubmit:preventDefault="true" class="activityFilters">
+<label>Administrator or record<input @bind="Search" maxlength="80" /></label>
+<label>Action<select @bind="Action"><option value="">All actions</option>@foreach(var action in Actions){<option value="@action">@action</option>}</select></label>
+<label>From (UTC)<input type="date" @bind="From" /></label><label>To (UTC)<input type="date" @bind="To" /></label>
+<button type="submit" class="primary" disabled="@Busy">Search</button><button type="button" @onclick="Reset" disabled="@Busy">Reset</button>
+</form>
+@if(Error.Length>0){<p class="error" role="alert">@Error</p>}
+@if(Result is not null){
+<div id="activity-report"><h3>Activity report</h3><p>@Result.Total matching entries · Page @Result.Page · UTC dates</p><p>Search: @(Applied.Search.Length==0?"All":Applied.Search) · Action: @(Applied.Action.Length==0?"All":Applied.Action) · From: @(Applied.From?.ToString("yyyy-MM-dd")??"Any") · To: @(Applied.To?.ToString("yyyy-MM-dd")??"Any")</p>
+<div class="tableWrap"><table><thead><tr><th>UTC date</th><th>Administrator</th><th>Action</th><th>Record</th></tr></thead><tbody>@foreach(var entry in Result.Items){<tr @key="entry.Id"><td>@entry.At.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")</td><td>@entry.Actor</td><td>@entry.Action</td><td>@entry.Entity #@entry.EntityId</td></tr>}</tbody></table></div>
+@if(Result.Items.Count==0){<p>No activity matches these filters.</p>}</div>
+<div class="settingsActions"><button type="button" disabled="@(Busy||Result.Page<=1)" @onclick="Previous">Previous</button><button type="button" disabled="@(Busy||Result.Page*Result.PageSize>=Result.Total)" @onclick="Next">Next</button><button type="button" @onclick="Export" disabled="@(Busy||Result.Items.Count==0)">CSV (this page)</button><PdfReport Target="activity-report" Title="Activity log" /></div>
+}else if(Busy){<p role="status">Loading activity…</p>}
+</section>
+@code {
+ string Search="",Action="",Error="";DateOnly? From,To;bool Busy;ActivityLogPage? Result;ActivityLogFilter Applied=new();
+ static readonly string[] Actions=["Create","Update","Delete","Generate","SetupAdmin","SignIn","SignOut","ChangePassword","RenameAdmin"];
+ protected override async Task OnInitializedAsync()=>await Load(new());
+ async Task Load(ActivityLogFilter filter){if(Busy)return;Busy=true;Error="";try{Result=await Service.ActivityAsync(filter);Applied=filter;}catch(Exception e){Error=RentalService.Error(e);Result=null;}finally{Busy=false;}}
+ Task Apply()=>Load(new(Search,Action,From,To));
+ Task Reset(){Search="";Action="";From=null;To=null;return Load(new());}
+ Task Previous()=>Load(Applied with{Page=Applied.Page-1});
+ Task Next()=>Load(Applied with{Page=Applied.Page+1});
+ async Task Export(){try{if(Result is null)return;var csv="UTC date,Administrator,Action,Record,Record ID\r\n"+string.Join("\r\n",Result.Items.Select(x=>string.Join(",",new[]{x.At.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss"),x.Actor,x.Action,x.Entity,x.EntityId.ToString()}.Select(CsvExport.Cell))));await JS.InvokeVoidAsync("rental.download","activity-log.csv",csv,"text/csv;charset=utf-8");}catch(Exception e){Error=RentalService.Error(e);}}
+}

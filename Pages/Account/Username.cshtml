@@ -1,0 +1,3 @@
+@page
+@model RentalManager.Pages.Account.UsernameModel
+<!doctype html><html><head><title>Change administrator username</title><link rel="stylesheet" href="/base.css"></head><body><section class="auth"><div class="login"><h1>Change administrator username</h1><p>Confirm your password. You will sign in again with the new username.</p><form method="post"><div asp-validation-summary="All" class="error"></div><label>New username<input asp-for="NewUsername" autocomplete="username" required minlength="3" maxlength="80"></label><label>Current password<input asp-for="CurrentPassword" type="password" autocomplete="current-password" required></label><button class="primary">Save and sign out</button></form><p><a href="/settings?tab=admin">Cancel</a></p></div></section></body></html>

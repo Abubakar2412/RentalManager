@@ -1,17 +1,25 @@
 @page "/settings"
 @attribute [Authorize]
 @inject RentalService Service
+@inject AuthenticationStateProvider Auth
 <PageTitle>Settings · Chwaya Rental Manager</PageTitle>
-<header><div><h1>Landlord &amp; settings</h1><p>Bank account details and standard agreement terms.</p></div></header>
-
-@if(Message.Length>0){<p class="notice">@Message</p>}
-@if(Data is not null){
-<section id="landlord-report"><h2>Saved landlord details</h2><PdfReport Target="landlord-report" Title="Landlord settings report" />
-<table><tbody>@foreach(var field in typeof(Landlord).GetProperties().Where(p=>p.Name!="RowVersion")){<tr><th>@field.Name</th><td>@field.GetValue(Data.Landlord)</td></tr>}</tbody></table></section>
-<RecordEditor @key="Data.Landlord" Record="Data.Landlord" Data="Data" OnSaved="Saved" OnCancel="Load" /><p class="hint">Changes apply to new contracts. Saved contract snapshots remain unchanged.</p><a href="/Account/Password" data-enhance-nav="false">Change administrator password</a>}
-@code{
- RentalData? Data;string Message="";
- protected override async Task OnInitializedAsync()=>await Load();
+<header><div><h1>Settings</h1><p>Landlord details, administrator setup and activity history.</p></div></header>
+<nav class="settingsTabs" aria-label="Settings sections"><a href="/settings" aria-current="@(Section=="landlord"?"page":null)">Landlord &amp; bank</a><a href="/settings?tab=admin" aria-current="@(Section=="admin"?"page":null)">Administrator</a><a href="/settings?tab=activity" aria-current="@(Section=="activity"?"page":null)">Activity log</a></nav>
+@if(Message.Length>0){<p class="notice" role="status">@Message</p>}
+@if(Section=="activity"){<ActivityLog />}
+else if(Section=="admin"){
+<section class="panel"><h2>Administrator setup</h2><p>Signed in as <strong>@Username</strong>. This installation uses one administrator account.</p><div class="settingsActions"><a class="primary" href="/Account/Username" data-enhance-nav="false">Change username</a><a class="primary" href="/Account/Password" data-enhance-nav="false">Change password</a><a href="/Account/Logout" data-enhance-nav="false">Sign out</a></div><p>Username and password changes invalidate existing sessions. Sign in again after saving.</p><p>The first administrator is created through initial setup. Setup closes automatically once the account exists.</p></section>
+<section class="panel"><h2>Rental configuration</h2><p>Set landlord contact details, bank account, currency and standard contract terms under <a href="/settings">Landlord &amp; bank</a>. Set rent amounts, payment intervals, renewal intervals and witnesses on each lease.</p><a href="/leases">Manage lease settings</a><p>Account changes and successful sign-ins appear in the <a href="/settings?tab=activity">activity log</a>.</p></section>
+}else if(Data is not null){
+<section id="landlord-report"><h2>Saved landlord details</h2><PdfReport Target="landlord-report" Title="Landlord settings report" /><table><tbody>@foreach(var field in typeof(Landlord).GetProperties().Where(p=>p.Name!="RowVersion"&&p.Name!="Id")){<tr><th>@field.Name</th><td>@field.GetValue(Data.Landlord)</td></tr>}</tbody></table></section>
+<RecordEditor @key="Data.Landlord" Record="Data.Landlord" Data="Data" OnSaved="Saved" OnCancel="Load" /><p class="hint">Changes apply to new contracts. Saved contract snapshots remain unchanged.</p>
+}else{<p>Loading settings…</p>}
+@code {
+ [SupplyParameterFromQuery(Name="tab")]public string? Tab{get;set;}
+ string Section=>Tab is "admin" or "activity"?Tab:"landlord";
+ RentalData? Data;string Message="",Username="";
+ protected override async Task OnInitializedAsync(){Username=(await Auth.GetAuthenticationStateAsync()).User.Identity?.Name??"";}
+ protected override async Task OnParametersSetAsync(){Message="";if(Section=="landlord")await Load();}
  async Task Load(){try{Data=await Service.LoadAsync(RentalLoadScope.Core);}catch(Exception e){Message=RentalService.Error(e);}}
  async Task Saved(){await Load();Message="Settings saved.";}
 }
