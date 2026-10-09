@@ -11,5 +11,5 @@ public class PasswordModel(IClientAccountService accounts):PageModel {
  [BindProperty,Required,StringLength(200)]public string CurrentPassword{get;set;}="";
  [BindProperty,Required,StringLength(200,MinimumLength=12)]public string NewPassword{get;set;}="";
  [BindProperty,Required,Compare(nameof(NewPassword))]public string ConfirmPassword{get;set;}="";
- public async Task<IActionResult> OnPostAsync(){if(!ModelState.IsValid)return Page();if(!int.TryParse(User.FindFirst("clientId")?.Value,out var id)||!await accounts.ChangePasswordAsync(id,CurrentPassword,NewPassword)){ModelState.AddModelError("","Current password is incorrect.");return Page();}await HttpContext.SignOutAsync();return RedirectToPage("Login");}
+ public async Task<IActionResult> OnPostAsync(){if(!ModelState.IsValid)return Page();if(CurrentPassword==NewPassword){ModelState.AddModelError("","Choose a different password from your current password.");return Page();}if(!int.TryParse(User.FindFirst("clientId")?.Value,out var id)||!await accounts.ChangePasswordAsync(id,CurrentPassword,NewPassword)){ModelState.AddModelError("","Current password is incorrect.");return Page();}await HttpContext.SignOutAsync();return RedirectToPage("Login");}
 }

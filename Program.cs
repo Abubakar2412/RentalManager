@@ -19,6 +19,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(o=>{
  o.LoginPath="/Account/Login";o.Cookie.Name="Chwaya.Rental.Session";o.Cookie.HttpOnly=true;o.Cookie.SameSite=SameSiteMode.Strict;o.Cookie.SecurePolicy=CookieSecurePolicy.SameAsRequest;o.ExpireTimeSpan=TimeSpan.FromHours(8);o.SlidingExpiration=false;
  o.AccessDeniedPath="/Account/Denied";
+ o.Events.OnRedirectToAccessDenied=context=>{context.Response.Redirect(context.HttpContext.User.IsInRole("Client")&&context.HttpContext.User.FindFirst("passwordChangeRequired")?.Value=="true"?"/Client/Password":context.RedirectUri);return Task.CompletedTask;};
  o.Events.OnRedirectToLogin=context=>{if(context.Request.Path.StartsWithSegments("/client"))context.Response.Redirect("/Client/Login");else context.Response.Redirect(context.RedirectUri);return Task.CompletedTask;};
  o.Events.OnValidatePrincipal=async context=>{
   var user=context.Principal;var name=user?.Identity?.Name;var stamp=user?.FindFirst("securityStamp")?.Value;bool valid=false;
