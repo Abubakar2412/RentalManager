@@ -1,6 +1,6 @@
 # Profile, comments and notifications
 
-Rental modules, Notifications (bell), Settings (gear), the initials profile card and sign-out are grouped in a responsive top navigation bar. On narrower screens, the links wrap into additional rows. The content uses the full page width.
+Rental module links are grouped in a responsive top navigation bar. Notifications (bell), Settings (gear), the initials profile card and sign-out remain in a persistent bottom account bar. On narrower screens the controls wrap into additional rows. Content uses the full page width and leaves space for the bottom bar.
 
 ## User profile
 
