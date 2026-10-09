@@ -58,7 +58,7 @@ jobs:
             if curl -fsS http://127.0.0.1:5080/Account/Login >/dev/null; then break; fi
             sleep 2
           done
-          node Tools/browser_check.cjs || { cat /tmp/rental-browser-server.log; exit 1; }
+          (node Tools/browser_check.cjs && node Tools/client_browser_check.cjs) || { cat /tmp/rental-browser-server.log; exit 1; }
       - name: Upload UI check screenshots
         if: always()
         uses: actions/upload-artifact@v4

@@ -1,3 +1,5 @@
 @inject NavigationManager Navigation
-<p>Redirecting to sign in…</p>
-@code { protected override void OnAfterRender(bool firstRender) { if(firstRender) Navigation.NavigateTo("/Account/Login",forceLoad:true); } }
+@inject AuthenticationStateProvider Authentication
+@code {
+ protected override async Task OnInitializedAsync(){var user=(await Authentication.GetAuthenticationStateAsync()).User;var path=Navigation.ToBaseRelativePath(Navigation.Uri);var target=user.IsInRole("Client")?(user.FindFirst("passwordChangeRequired")?.Value=="true"?"/Client/Password":"/client"):path.StartsWith("client",StringComparison.OrdinalIgnoreCase)?"/Client/Login":"/Account/Login";Navigation.NavigateTo(target,true);}
+}

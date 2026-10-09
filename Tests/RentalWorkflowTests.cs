@@ -11,9 +11,11 @@ public class RentalWorkflowTests {
   public RentalDbContext CreateDbContext()=>new(options);
   public Task<RentalDbContext> CreateDbContextAsync(CancellationToken cancellationToken=default)=>Task.FromResult(CreateDbContext());
  }
+ sealed class ClientUser(ClientIdentity identity):ICurrentClient {public Task<ClientIdentity> GetRequiredAsync()=>Task.FromResult(identity);}
+ sealed class FixedClock:TimeProvider {public override DateTimeOffset GetUtcNow()=>new(2026,12,20,0,0,0,TimeSpan.Zero);}
  sealed class CurrentUser : ICurrentUser {public Task<string> GetRequiredNameAsync()=>Task.FromResult("rental-admin");}
  sealed class Auth : AuthenticationStateProvider {
-  public override Task<AuthenticationState> GetAuthenticationStateAsync()=>Task.FromResult(new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(new[]{new Claim(ClaimTypes.Name,"test-admin")},"test"))));
+  public override Task<AuthenticationState> GetAuthenticationStateAsync()=>Task.FromResult(new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(new[]{new Claim(ClaimTypes.Name,"test-admin"),new Claim(ClaimTypes.Role,"Admin")},"test"))));
  }
  [Fact]
  public async Task HousesAndShopsUseTheSamePaymentsAndContracts() {
@@ -90,6 +92,26 @@ public class RentalWorkflowTests {
    await workspace.MarkReadAsync(null);Assert.Empty((await workspace.NotificationsAsync(true,1)).Items);
    Assert.Single((await service.ActivityAsync(new(Action:"UpdateProfile"))).Items);
    Assert.Equal(27,(await service.ActivityAsync(new(Action:"CreateComment"))).Total);
+   var clientAccounts=new ClientAccountService(factory);var clientRepository=new EfClientPortalRepository(factory);
+   await clientAccounts.CreateAsync(new(){TenantId=tenant.Id,Username="tenant-one",TemporaryPassword="ClientInitial_2026!"},"test-admin");
+   var clientSession=await clientAccounts.VerifyAsync("tenant-one","ClientInitial_2026!");Assert.NotNull(clientSession);Assert.True(clientSession.MustChangePassword);
+   Assert.False(await clientAccounts.ChangePasswordAsync(clientSession.AccountId,"wrong-password","ClientUpdated_2026!"));Assert.True(await clientAccounts.ChangePasswordAsync(clientSession.AccountId,"ClientInitial_2026!","ClientUpdated_2026!"));
+   Assert.False(await clientAccounts.ValidateAsync(clientSession.AccountId,tenant.Id,"tenant-one",clientSession.Stamp));clientSession=await clientAccounts.VerifyAsync("tenant-one","ClientUpdated_2026!");Assert.False(clientSession!.MustChangePassword);
+   var client=new ClientPortalService(clientRepository,new ClientUser(new(clientSession.AccountId,tenant.Id,"tenant-one")),new FixedClock());
+   var clientData=await client.LoadAsync();Assert.Equal(2,clientData.Leases.Count);Assert.Equal(2,clientData.Contracts.Count);Assert.Equal(2,client.Reminders(clientData).Count);
+   var otherTenant=new Tenant{FullName="Other client",NationalId="OTHER-CLIENT",Phone="000111",Address="Other area"};await service.SaveAsync(otherTenant);
+   var otherProperty=new Property{Name="Other private house",Address="Other area",MonthlyRent=500000};await service.SaveAsync(otherProperty);
+   var otherLease=new Lease{PropertyId=otherProperty.Id,TenantId=otherTenant.Id,StartDate=new(2026,1,1),EndDate=new(2026,12,31),MonthlyRent=500000};await service.SaveAsync(otherLease);var privateContract=await service.GenerateContractAsync(otherLease.Id);
+   Assert.Null(await client.ContractAsync(privateContract));Assert.NotNull(await client.ContractAsync(clientData.Contracts[0].Id));
+   await Assert.ThrowsAsync<InvalidOperationException>(()=>client.SubmitAsync(new(){LeaseId=otherLease.Id,ContinueRent=true,Months=6}));
+   var ownLease=clientData.Leases[0];await client.SubmitAsync(new(){LeaseId=ownLease.Id,ContinueRent=true,Months=6,Message="I would like to continue"});
+   var request=Assert.Single(await clientRepository.RequestsAsync());Assert.False(request.Reviewed);Assert.Equal(tenant.FullName,request.Tenant);Assert.Equal(ownLease.End,(await client.LoadAsync()).Leases.Single(x=>x.Id==ownLease.Id).End);
+   await clientRepository.ReviewAsync(request.Id,"Please contact the landlord to agree the new term.","test-admin");var reviewed=Assert.Single((await client.LoadAsync()).Requests);Assert.True(reviewed.Reviewed);Assert.Contains("agree",reviewed.Response);
+   await client.SubmitAsync(new(){LeaseId=ownLease.Id,ContinueRent=false,Message="I plan to leave"});var updated=Assert.Single((await client.LoadAsync()).Requests);Assert.False(updated.ContinueRent);Assert.False(updated.Reviewed);Assert.Equal(0,updated.Months);
+   await clientAccounts.EnableAsync(clientSession.AccountId,false,"test-admin");Assert.Null(await clientAccounts.VerifyAsync("tenant-one","ClientUpdated_2026!"));Assert.False(await clientAccounts.ValidateAsync(clientSession.AccountId,tenant.Id,"tenant-one",clientSession.Stamp));
+   await clientAccounts.EnableAsync(clientSession.AccountId,true,"test-admin");await clientAccounts.ResetAsync(clientSession.AccountId,"ClientReset_2026!","test-admin");Assert.True((await clientAccounts.VerifyAsync("tenant-one","ClientReset_2026!"))!.MustChangePassword);
+   Assert.Single(await clientAccounts.ListAsync());
+   var reassigned=data.Leases.First(x=>x.Id==ownLease.Id);reassigned.TenantId=otherTenant.Id;await Assert.ThrowsAsync<InvalidOperationException>(()=>service.SaveAsync(reassigned));
   } finally { await verify.Database.EnsureDeletedAsync(); }
  }
  [Fact]

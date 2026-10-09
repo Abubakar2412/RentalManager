@@ -18,7 +18,7 @@
 </section>
 @code {
  string Search="",Action="",Error="";DateOnly? From,To;bool Busy;ActivityLogPage? Result;ActivityLogFilter Applied=new();
- static readonly string[] Actions=["Create","Update","Delete","Generate","SetupAdmin","SignIn","SignOut","ChangePassword","RenameAdmin","UpdateProfile","CreateComment","ResolveComment","ReopenComment"];
+ static readonly string[] Actions=["Create","Update","Delete","Generate","SetupAdmin","SignIn","SignOut","ChangePassword","RenameAdmin","UpdateProfile","CreateComment","ResolveComment","ReopenComment","CreateClient","ResetClient","EnableClient","DisableClient","ClientSignIn","ClientPassword","RenewalIntent","ReviewRenewal"];
  protected override async Task OnInitializedAsync()=>await Load(new());
  async Task Load(ActivityLogFilter filter){if(Busy)return;Busy=true;Error="";try{Result=await Service.ActivityAsync(filter);Applied=filter;}catch(Exception e){Error=RentalService.Error(e);Result=null;}finally{Busy=false;}}
  Task Apply()=>Load(new(Search,Action,From,To));

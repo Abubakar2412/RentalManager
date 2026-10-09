@@ -1,0 +1,36 @@
+@page "/client"
+@page "/client/contracts"
+@page "/client/notifications"
+@layout ClientLayout
+@attribute [Authorize(Policy="Client")]
+@inject ClientPortalService Portal
+@inject NavigationManager Navigation
+<PageTitle>@Title · Chwaya House</PageTitle>
+<header><div><div class="eyebrow">CLIENT PORTAL</div><h1>@Title</h1><p>@(Data is null?"Your rental information":"Welcome, "+Data.Name)</p></div><button @onclick="Load" disabled="@Busy">Refresh</button></header>
+@if(Error.Length>0){<p class="error" role="alert">@Error</p>}
+@if(Message.Length>0){<p class="notice" role="status">@Message</p>}
+@if(Data is not null){
+@if(Section=="contracts"){
+<section class="panel settingsPanel"><h2>Your saved contracts</h2><p>Open a contract to preview, print or save it as a PDF.</p><div class="tableWrap"><table><thead><tr><th>Lease</th><th>Property</th><th>Created (UTC)</th><th>Document</th></tr></thead><tbody>@foreach(var contract in Data.Contracts){<tr><td>RM-@contract.LeaseId.ToString("D6")</td><td>@Data.Leases.FirstOrDefault(x=>x.Id==contract.LeaseId)?.Property</td><td>@contract.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</td><td><a href="@($"/client/documents/contracts/{contract.Id}")" target="_blank" rel="noopener">Preview / print contract</a></td></tr>}</tbody></table></div>@if(Data.Contracts.Count==0){<p class="empty">Your landlord has not generated a contract yet.</p>}</section>
+}else if(Section=="notifications"){
+<section class="panel settingsPanel"><h2>Rental reminders</h2><p>Reminders follow the notice period on your lease. Dates use East Africa time.</p>@foreach(var notice in Portal.Reminders(Data)){<article class="notificationCard isUnread"><AppIcon Name="bell" /><div><h3>@notice.Property</h3><p>@notice.Message</p><a href="/client">Share your rental decision</a></div></article>}
+@foreach(var request in Data.Requests.Where(x=>x.Reviewed)){<article class="notificationCard"><AppIcon Name="comment" /><div><h3>Landlord reviewed your request · @request.Property</h3><p>@(request.Response.Length>0?request.Response:"Your landlord acknowledged your rental decision. Contact them to confirm the next steps.")</p></div></article>}
+@if(Portal.Reminders(Data).Count==0&&!Data.Requests.Any(x=>x.Reviewed)){<p class="empty">No rental reminders or responses yet.</p>}</section>
+}else{
+<div class="stats"><div class="stat"><span>My leases</span><b>@Data.Leases.Count</b></div><div class="stat"><span>Saved contracts</span><b>@Data.Contracts.Count</b></div><div class="stat"><span>Rental reminders</span><b>@Portal.Reminders(Data).Count</b></div></div>
+@foreach(var notice in Portal.Reminders(Data)){<p class="notice"><AppIcon Name="bell" /> @notice.Property: @notice.Message</p>}
+<div class="clientLeaseGrid">@foreach(var lease in Data.Leases){var request=Data.Requests.FirstOrDefault(x=>x.LeaseId==lease.Id);<section class="panel settingsPanel"><div class="commentHeading"><h2>@lease.Property</h2><span class="badge">@lease.Status</span></div><p>Lease RM-@lease.Id.ToString("D6")</p><dl class="leaseDetails"><div><dt>Rental term</dt><dd>@lease.Start.ToString("yyyy-MM-dd") to @lease.End.ToString("yyyy-MM-dd")</dd></div><div><dt>Monthly rent</dt><dd>@Data.Currency @lease.MonthlyRent.ToString("N2")</dd></div><div><dt>Notice period</dt><dd>@lease.NoticeDays days</dd></div></dl><div class="settingsActions"><a href="/client/contracts">View contract</a>@if(lease.Status=="Active"){<button class="primary" @onclick="()=>Decide(lease)">@(request is null?"Share rental decision":"Update rental decision")</button>}</div>
+@if(request is not null){<div class="renewalStatus"><strong>@(request.ContinueRent?$"Requested to continue for {request.Months} month(s)":"Plans to leave at the end of the term")</strong><p>Status: @(request.Reviewed?"Reviewed by landlord":"Awaiting landlord review")</p>@if(request.Response.Length>0){<p>@request.Response</p>}</div>}</section>}</div>
+@if(Data.Leases.Count==0){<section class="panel settingsPanel"><h2>No leases linked yet</h2><p>Contact your landlord to link your rental agreement.</p></section>}
+@if(Draft is not null){<section class="panel settingsPanel" id="renewal-form"><h2>Your rental decision</h2><p>This submits your intention to the landlord. Renewal dates and terms must be agreed with the landlord.</p><EditForm Model="Draft" OnValidSubmit="Submit" FormName="client-renewal"><DataAnnotationsValidator /><ValidationSummary /><label>Decision<InputSelect @bind-Value="Draft.ContinueRent"><option value="true">I would like to continue renting</option><option value="false">I plan to leave at the end of the term</option></InputSelect></label>@if(Draft.ContinueRent){<label>Requested additional months<InputNumber @bind-Value="Draft.Months" min="1" max="12" /></label>}<label>Message to landlord<InputTextArea @bind-Value="Draft.Message" maxlength="2000" placeholder="Share your plans or ask a question…" /></label><div class="settingsActions"><button type="submit" class="primary" disabled="@Busy">Send decision to landlord</button><button type="button" @onclick="()=>Draft=null" disabled="@Busy">Cancel</button></div></EditForm></section>}
+}
+}else if(Error.Length==0){<p role="status">Loading your rental…</p>}
+@code{
+ ClientDashboard? Data;RenewalDraft? Draft;string Error="",Message="";bool Busy;
+ string Section=>Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0].Trim('/').Split('/').Last();
+ string Title=>Section switch{"contracts"=>"My contracts","notifications"=>"My notifications",_=>"My rental"};
+ protected override async Task OnParametersSetAsync()=>await Load();
+ async Task Load(){try{Data=await Portal.LoadAsync();}catch(Exception e){Error=RentalService.Error(e);}}
+ void Decide(ClientLease lease){Error="";Message="";var existing=Data!.Requests.FirstOrDefault(x=>x.LeaseId==lease.Id);Draft=new(){LeaseId=lease.Id,Months=existing?.Months>0?existing.Months:lease.RenewalMonths,ContinueRent=existing?.ContinueRent??true,Message=existing?.Message??""};}
+ async Task Submit(){if(Draft is null||Busy)return;Busy=true;Error="";Message="";try{await Portal.SubmitAsync(Draft);Draft=null;await Load();Message="Your rental decision was sent to the landlord.";}catch(Exception e){Error=RentalService.Error(e);}finally{Busy=false;}}
+}
