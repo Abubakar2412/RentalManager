@@ -30,7 +30,7 @@ public class EfRentalRepository(IDbContextFactory<RentalDbContext> factory,ICont
   Audit=scope is RentalLoadScope.All or RentalLoadScope.Audit ? await db.Audit.AsNoTracking().OrderByDescending(x=>x.Id).Take(250).ToListAsync() : []
  };}
  static void Validate(object entity){var errors=new List<ValidationResult>();if(!Validator.TryValidateObject(entity,new ValidationContext(entity),errors,true))throw new InvalidOperationException(string.Join(" ",errors.Select(x=>x.ErrorMessage)));}
- static void AddAudit(RentalDbContext db,string actor,string action,string entity,int id){db.Audit.Add(new(){At=DateTimeOffset.UtcNow,Actor=actor,Action=action,Entity=entity,EntityId=id});db.Notifications.Add(new(){Title=$"{entity} {action.ToLowerInvariant()}",Message=$"{actor}: {entity} #{id} — {action}.",Link=entity switch{"Property"=>"/houses","Tenant"=>"/tenants","Lease"=>"/leases","Payment"=>"/payments","Contract"=>"/contracts",_=>"/settings?tab=activity"},CreatedAt=DateTimeOffset.UtcNow});}
+ static void AddAudit(RentalDbContext db,string actor,string action,string entity,int id,string? link=null,bool notify=true){db.Audit.Add(new(){At=DateTimeOffset.UtcNow,Actor=actor,Action=action,Entity=entity,EntityId=id});if(notify)db.Notifications.Add(new(){Title=$"{entity} {action switch{"Create"=>"created","Update"=>"updated","Delete"=>"deleted","Generate"=>"generated",_=>"changed"}}",Message=$"{actor}: {entity} #{id} — {action}.",Link=link??(entity switch{"Property"=>"/houses","Tenant"=>"/tenants","Lease"=>"/leases","Payment"=>"/payments","Contract"=>"/contracts",_=>"/settings?tab=activity"}),CreatedAt=DateTimeOffset.UtcNow});}
  async Task SaveAsyncCore(IEntity entity,string actor){
   Validate(entity);
   await using var db=await factory.CreateDbContextAsync();
@@ -60,7 +60,7 @@ public class EfRentalRepository(IDbContextFactory<RentalDbContext> factory,ICont
    }
   }
   if(added)db.Add(entity);else db.Update(entity);
-  await db.SaveChangesAsync();AddAudit(db,actor,added?"Create":"Update",entity.GetType().Name,entity.Id);await db.SaveChangesAsync();await tx.CommitAsync();
+  await db.SaveChangesAsync();AddAudit(db,actor,added?"Create":"Update",entity.GetType().Name,entity.Id,entity is Property shop&&shop.Kind=="Shop"?"/shops":null);await db.SaveChangesAsync();await tx.CommitAsync();
  }
  async Task SaveRentInstalmentAsyncCore(Payment payment,int months,string actor) {
   if(payment.Id!=0||payment.Kind!="Rent"||months<1||months>12)throw new InvalidOperationException("Select 1–12 months for a new rent payment.");
@@ -73,10 +73,10 @@ public class EfRentalRepository(IDbContextFactory<RentalDbContext> factory,ICont
   var first=new DateOnly(lease.StartDate.Year,lease.StartDate.Month,1);var last=new DateOnly(lease.EndDate.Year,lease.EndDate.Month,1);
   if(lease.Status=="Cancelled"||parts.Any(x=>x.Period<first||x.Period>last))throw new InvalidOperationException("All rental months must fall within a non-cancelled lease.");
   foreach(var part in parts){Validate(part);db.Payments.Add(part);}
-  await db.SaveChangesAsync();foreach(var part in parts)AddAudit(db,actor,"Create","Payment",part.Id);
+  await db.SaveChangesAsync();foreach(var part in parts)AddAudit(db,actor,"Create","Payment",part.Id,notify:false);db.Notifications.Add(new(){Title="Rent payment recorded",Message=$"{actor} recorded rent across {months} month(s).",Link="/payments",CreatedAt=DateTimeOffset.UtcNow});
   await db.SaveChangesAsync();await tx.CommitAsync();
  }
- async Task DeleteAsyncCore(IEntity entity,string actor){if(entity is Landlord)throw new InvalidOperationException("Landlord settings cannot be deleted.");await using var db=await factory.CreateDbContextAsync();await using var tx=await db.Database.BeginTransactionAsync();db.Remove(entity);AddAudit(db,actor,"Delete",entity.GetType().Name,entity.Id);await db.SaveChangesAsync();await tx.CommitAsync();}
+ async Task DeleteAsyncCore(IEntity entity,string actor){if(entity is Landlord)throw new InvalidOperationException("Landlord settings cannot be deleted.");await using var db=await factory.CreateDbContextAsync();await using var tx=await db.Database.BeginTransactionAsync();db.Remove(entity);AddAudit(db,actor,"Delete",entity.GetType().Name,entity.Id,entity is Property shop&&shop.Kind=="Shop"?"/shops":null);await db.SaveChangesAsync();await tx.CommitAsync();}
  async Task<int> GenerateContractAsyncCore(int leaseId,string actor){
   await using var db=await factory.CreateDbContextAsync();await using var tx=await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
   var l=await db.Leases.AsNoTracking().SingleAsync(x=>x.Id==leaseId);

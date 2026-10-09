@@ -7,7 +7,7 @@ const { chromium } = require('playwright');
   page.on('pageerror',e=>errors.push(e.message));
   const base=process.env.RENTAL_UI_URL||'http://127.0.0.1:5080';
   const go=path=>page.goto(base+path,{waitUntil:'networkidle'});
-  const visible=async selector=>assert(await page.locator(selector).isVisible(),`${selector} should be visible`);
+  const visible=async selector=>assert(await page.locator(selector).first().isVisible(),`${selector} should be visible`);
   try {
     await go('/profile');assert(page.url().includes('/Account/Login')||page.url().includes('/Account/Setup'));
     await go('/Account/Setup');

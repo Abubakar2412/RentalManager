@@ -19,5 +19,6 @@
  async Task Search(){if(Busy)return;Busy=true;Error="";try{await Load(new(Term,Status));}finally{Busy=false;}}
  async Task Add(){if(Busy)return;Busy=true;Error="";Message="";try{await Workspace.AddCommentAsync(Draft);Draft=new();Term="";Status="all";await Load(new());Message="Comment posted.";}catch(Exception e){Error=RentalService.Error(e);}finally{Busy=false;}}
  async Task Toggle(RentalComment comment){if(Busy)return;Busy=true;Error="";try{await Workspace.ResolveCommentAsync(comment.Id,!comment.Resolved);await Load(Applied);}catch(Exception e){Error=RentalService.Error(e);}finally{Busy=false;}}
- Task Previous()=>Load(Applied with{Page=Applied.Page-1});Task Next()=>Load(Applied with{Page=Applied.Page+1});
+ async Task ChangePage(int page){if(Busy)return;Busy=true;Error="";try{await Load(Applied with{Page=page});}finally{Busy=false;}}
+ Task Previous()=>ChangePage(Applied.Page-1);Task Next()=>ChangePage(Applied.Page+1);
 }

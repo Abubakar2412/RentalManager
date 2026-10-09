@@ -81,7 +81,7 @@ public class RentalWorkflowTests {
    await workspace.AddCommentAsync(new(){Subject="Maintenance follow-up",Message="<script>alert(1)</script> inspect the door"});
    var comments=await workspace.CommentsAsync(new(Status:"open"));Assert.Single(comments.Items);Assert.Equal("rental-admin",comments.Items[0].Author);Assert.Contains("<script>",comments.Items[0].Message);
    var notices=await workspace.NotificationsAsync(true,1);Assert.Single(notices.Items);Assert.Equal("/comments",notices.Items[0].Link);Assert.Equal(1,notices.Unread);
-   await workspace.MarkReadAsync(notices.Items[0].Id);Assert.Equal(0,(await workspace.SummaryAsync()).Unread);Assert.Single((await workspace.NotificationsAsync(false,1)).Items.Where(x=>x.Id==notices.Items[0].Id&&x.IsRead));
+   await workspace.MarkReadAsync(notices.Items[0].Id);Assert.Equal(0,(await workspace.SummaryAsync()).Unread);Assert.Single((await workspace.NotificationsAsync(false,1)).Items,x=>x.Id==notices.Items[0].Id&&x.IsRead);
    await workspace.ResolveCommentAsync(comments.Items[0].Id,true);Assert.Empty((await workspace.CommentsAsync(new(Status:"open"))).Items);Assert.Single((await workspace.CommentsAsync(new(Status:"resolved"))).Items);
    await workspace.ResolveCommentAsync(comments.Items[0].Id,false);Assert.Single((await workspace.CommentsAsync(new(Search:"door",Status:"open"))).Items);
    for(var i=0;i<26;i++)await workspace.AddCommentAsync(new(){Subject=$"Follow-up {i}",Message="Check rental maintenance"});
