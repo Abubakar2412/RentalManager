@@ -181,3 +181,7 @@ See [Settings and administrator setup](Docs/Settings.md) for account controls, a
 ## Profile, comments and notifications
 
 See [User workspace modules](Docs/Profile-Comments-Notifications.md) for profile controls, internal comments, the notification inbox and the required additive database migration.
+
+## Client portal
+
+See [Client portal](Docs/Client-Portal.md) for tenant logins, contract previews, rental-expiry reminders, renewal requests and the required additive migration.
