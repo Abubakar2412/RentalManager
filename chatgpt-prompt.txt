@@ -1,0 +1,63 @@
+======================================================================
+  🤖 CHATGPT-C00LKIDD AUTOMATED ASSISTANT & WORKFLOW INSTRUCTIONS 🤖
+======================================================================
+
+[ESP] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Este archivo sirve para registrar y documentar los prompts, instrucciones
+y cambios realizados en el proyecto con la ayuda de la IA. Actúa como el
+núcleo de control de contexto para el asistente automatizado.
+
+🛡️ ADVERTENCIA DE SEGURIDAD CRÍTICA (SECRET-FREE POLICY):
+Este repositorio está diseñado para ser de código abierto y estar completamente 
+LIBRE DE SECRETOS. Cuando le pidas código a la IA o subas cambios:
+1. 🚫 NUNCA expongas claves de API, IDs de bases de datos D1 de producción
+   ni nombres de buckets R2 reales en texto plano.
+2. 🔒 Asegúrate de mantener la configuración de producción oculta usando
+   los placeholders correspondientes en 'wrangler.jsonc' o 'astro.config.mjs'.
+3. ❌ Si la IA te sugiere agregar tokens duros en el código o scripts de 'src/',
+   rechaza la sugerencia. Inyecta los secretos localmente mediante un archivo
+   '.dev.vars' o en el servidor con la CLI: 'wrangler secret put NOMBRE_VARIABLE'.
+
+⚙️ ¿CÓMO FUNCIONA EL ASISTENTE? (WORKFLOW):
+El asistente opera leyendo este archivo de manera secuencial en cada commit.
+Su flujo de trabajo está dividido en las siguientes fases continuas:
+1. 📂 ANALIZAR: Lee el estado actual del repositorio y los requerimientos del prompt.
+2. 🕵️ AUDITAR: Verifica que el código nuevo no introduzca vulnerabilidades o fugas de API.
+3. 🛠️ GENERAR/REFACTORIZAR: Escribe código limpio, modular y optimizado para Cloudflare Workers.
+4. 📝 DOCUMENTAR: Actualiza el historial para mantener la transparencia en el equipo.
+
+📋 INSTRUCCIONES DE USO CONTINUO:
+1. 💬 Pega en la sección inferior los prompts principales que le des a la IA.
+2. 🔄 Agrega una breve nota con los cambios aplicados (Changelog) en cada versión.
+3. 🚀 Guarda el archivo (Commit changes) para que la IA mantenga la continuidad del contexto.
+
+----------------------------------------------------------------------
+
+[ENG] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This file is used to log and document prompts, instructions, and project
+changes made with AI assistance. It serves as the master context control
+hub for the automated assistant.
+
+🛡️ CRITICAL SECURITY WARNING (SECRET-FREE POLICY):
+This repository is engineered to be open-source and entirely SECRET-FREE.
+When prompting the AI or submitting updates:
+1. 🚫 NEVER expose API keys, active D1 database IDs, or real R2 bucket names
+   in plaintext within public configuration files.
+2. 🔒 Ensure production environment parameters stay masked via appropriate
+   configuration placeholders in 'wrangler.jsonc' or 'astro.config.mjs'.
+3. ❌ If the AI suggests hardcoding raw tokens into 'src/' backend scripts,
+   reject it immediately. Securely bind your parameters locally using a non-tracked
+   '.dev.vars' file, or in production via: 'wrangler secret put VARIABLE_NAME'.
+
+⚙️ HOW THE ASSISTANT WORKS (WORKFLOW):
+The assistant operates by parsing this file sequentially across commits.
+Its workflow is divided into the following continuous phases:
+1. 📂 ANALYZE: Scans the repository's current state and active prompt requirements.
+2. 🕵️ AUDIT: Verifies that new code code does not introduce security vulnerabilities.
+3. 🛠️ GENERATE/REFACTOR: Writes clean, modular code optimized for Cloudflare Workers.
+4. 📝 DOCUMENT: Updates execution logs to maintain absolute transparency for the team.
+
+📋 USAGE INSTRUCTIONS:
+1. 💬 Append the master prompts provided to the AI into the section below.
+2. 🔄 Maintain a clean changelog listing every feature added per commit version.
+3. 🚀 Save and 'Commit changes' so the AI keeps a clear history across subsequent logs.
