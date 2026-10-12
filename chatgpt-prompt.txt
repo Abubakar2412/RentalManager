@@ -69,5 +69,4 @@ Its workflow is divided into the following continuous phases:
 
 🚀 v1.1.0 - 12/10/2026
 • Prompt enviado a la IA: "Analizar la estructura completa de carpetas del backend en C# Blazor Server para registrar módulos e identificar vulnerabilidades en la capa de infraestructura."
-• Notas del cambio / Change notes: Auditoría completa completada. Se identificó una separación correcta de Clean Architecture (Domain, Application, Infrastructure). Se mantiene el monitoreo de los archivos appsettings.json y las migraciones de EF Core para prevenir la fuga de secretos de SQL Server. El archivo 'chatgpt-prompt.txt' ha sido desplegado exitosamente en la raíz del repositorio.
-
+• Notas del cambio / Change notes: Auditoría de arquitectura y seguridad completada con éxito. Se validó la implementación de Clean Architecture (Domain, Application, Infrastructure). Se identificó una vulnerabilidad crítica por filtración de cadenas de conexión (Connection Strings) de SQL Server en texto plano dentro de 'appsettings.json' y 'appsettings.Production.json'. Se procedió con la apertura del Issue oficial de seguridad #7 para mitigar el riesgo. El archivo 'chatgpt-prompt.txt' ya se encuentra activo en la raíz.
