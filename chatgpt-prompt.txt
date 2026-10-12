@@ -61,3 +61,12 @@ Its workflow is divided into the following continuous phases:
 1. 💬 Append the master prompts provided to the AI into the section below.
 2. 🔄 Maintain a clean changelog listing every feature added per commit version.
 3. 🚀 Save and 'Commit changes' so the AI keeps a clear history across subsequent logs.
+
+======================================================================
+  🕒 LOG HISTORIAL DE PROMPTS & CAMBIOS / PROMPT & CHANGELOG LOG
+======================================================================
+(Agrega tus prompts e historial debajo de esta línea / Append your logs below)
+
+🚀 v1.0.0 - 12/10/2026
+• Prompt enviado a la IA: "Inicializar estructura de control y auditar vulnerabilidades en el backend de administración de propiedades en Blazor."
+• Notas del cambio / Change notes: Inicialización del archivo de prompts del asistente. Se detectó una filtración crítica de credenciales de SQL Server en los archivos appsettings públicos de la raíz.
